@@ -9,6 +9,7 @@ extension GameState {
             gold: gold,
             hpMax: hpMax,
             mpMax: mpMax,
+            currentMP: currentMP,
             experience: experience,
             experienceToNextLevel: experienceToNextLevel,
             currentActNumber: currentActNumber,
@@ -25,6 +26,7 @@ extension GameState {
             inventory: inventory,
             inventoryCapacity: inventoryCapacity,
             inventoryLoad: inventoryLoad,
+            knownSpells: knownSpells,
             logLine: logLine,
             isSellingInTown: isSellingInTown,
             actAttackBonus: actAttackBonus,
@@ -39,6 +41,7 @@ extension GameState {
         gold = snapshot.gold
         hpMax = snapshot.hpMax
         mpMax = snapshot.mpMax
+        currentMP = min(Double(snapshot.mpMax), max(0, snapshot.currentMP))
         experience = snapshot.experience
         experienceToNextLevel = snapshot.experienceToNextLevel
         currentActNumber = snapshot.currentActNumber
@@ -55,6 +58,7 @@ extension GameState {
         inventory = snapshot.inventory
         inventoryCapacity = snapshot.inventoryCapacity
         inventoryLoad = snapshot.inventoryLoad
+        knownSpells = snapshot.knownSpells
         logLine = snapshot.logLine
         isSellingInTown = snapshot.isSellingInTown
         actAttackBonus = snapshot.actAttackBonus

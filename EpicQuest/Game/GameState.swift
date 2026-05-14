@@ -9,6 +9,7 @@ final class GameState {
     var gold = 0
     var hpMax = 10
     var mpMax = 5
+    var currentMP = 5.0
 
     var experience = 0
     var experienceToNextLevel = 50
@@ -30,6 +31,7 @@ final class GameState {
     var inventory: [LootItem] = []
     var inventoryCapacity = 10.0
     var inventoryLoad = 0.0
+    var knownSpells: [SpellEntry] = []
 
     var logLine = "Roll your stats and start."
     var isSellingInTown = false
@@ -55,6 +57,20 @@ final class GameState {
     var currentActLabel: String {
         if currentActNumber == 0 { return "Prologue" }
         return "Act \(romanNumeral(currentActNumber))"
+    }
+
+    var spellCombatBonus: Double {
+        let totalSpellLevels = knownSpells.reduce(0) { $0 + $1.level }
+        let bonus = Double(totalSpellLevels) * 0.002
+        return min(0.12, bonus)
+    }
+
+    var battleTickStep: Double {
+        0.08 + spellCombatBonus
+    }
+
+    var currentMPInt: Int {
+        Int(currentMP.rounded(.down))
     }
 
     var plotItems: [ReadOnlyCheckItem] {
@@ -84,6 +100,7 @@ final class GameState {
 
     private var timerStarted = false
     private var timerTask: Task<Void, Never>?
+    private var statRollHistory: [[Int]] = []
 
     func startTimerIfNeeded() {
         guard !timerStarted else { return }
@@ -111,6 +128,7 @@ final class GameState {
         gold = 0
         hpMax = 10
         mpMax = 5
+        currentMP = Double(mpMax)
         experience = 0
         experienceToNextLevel = 50
 
@@ -131,9 +149,11 @@ final class GameState {
         inventory.removeAll()
         inventoryCapacity = 10
         inventoryLoad = 0
+        knownSpells.removeAll()
 
         logLine = "Roll your stats and start."
         isSellingInTown = false
+        statRollHistory.removeAll()
         actAttackBonus = 0
         actDefenseBonus = 0
 
@@ -141,22 +161,32 @@ final class GameState {
     }
 
     func rollStats() {
-        character.str = Int.random(in: 3...18)
-        character.con = Int.random(in: 3...18)
-        character.dex = Int.random(in: 3...18)
-        character.int = Int.random(in: 3...18)
-        character.wis = Int.random(in: 3...18)
-        character.cha = Int.random(in: 3...18)
+        statRollHistory.append([
+            character.str,
+            character.con,
+            character.dex,
+            character.int,
+            character.wis,
+            character.cha
+        ])
+
+        character.str = Int.random(in: 1...20)
+        character.con = Int.random(in: 1...20)
+        character.dex = Int.random(in: 1...20)
+        character.int = Int.random(in: 1...20)
+        character.wis = Int.random(in: 1...20)
+        character.cha = Int.random(in: 1...20)
         saveCurrentGame()
     }
 
     func unrollStats() {
-        character.str = 4
-        character.con = 8
-        character.dex = 10
-        character.int = 9
-        character.wis = 10
-        character.cha = 11
+        guard let previous = statRollHistory.popLast(), previous.count == 6 else { return }
+        character.str = previous[0]
+        character.con = previous[1]
+        character.dex = previous[2]
+        character.int = previous[3]
+        character.wis = previous[4]
+        character.cha = previous[5]
         saveCurrentGame()
     }
 
@@ -166,6 +196,7 @@ final class GameState {
         gold = 0
         hpMax = 10
         mpMax = 5
+        currentMP = Double(mpMax)
         experience = 0
         experienceToNextLevel = 50
 
@@ -181,10 +212,12 @@ final class GameState {
         inventory.removeAll()
         inventoryLoad = 0
         inventoryCapacity = 10
+        knownSpells.removeAll()
 
         isSellingInTown = false
         battleProgress = 0
         logLine = "Starting Prologue."
+        statRollHistory.removeAll()
 
         resetActBonuses()
         seedInitialEquipment()
@@ -194,13 +227,16 @@ final class GameState {
     func tick() {
         guard phase == .adventuring else { return }
 
+        regenerateMP()
+
         if isSellingInTown {
             sellStep()
             saveCurrentGame()
             return
         }
 
-        battleProgress += 0.08
+        castBestSpellIfPossible()
+        battleProgress += battleTickStep
         if battleProgress < 1 {
             saveCurrentGame()
             return

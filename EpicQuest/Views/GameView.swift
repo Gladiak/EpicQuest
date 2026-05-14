@@ -18,6 +18,9 @@ struct GameView: View {
                             InfoRow(label: "Race", value: game.character.race)
                             InfoRow(label: "Class", value: game.character.characterClass)
                             InfoRow(label: "Level", value: "\(game.level)")
+                            InfoRow(label: "Gold", value: "\(game.gold)")
+                            Divider()
+                                .padding(.vertical, 2)
                             StatTextRow(label: "STR", value: game.character.str)
                             StatTextRow(label: "CON", value: game.character.con)
                             StatTextRow(label: "DEX", value: game.character.dex)
@@ -26,29 +29,49 @@ struct GameView: View {
                             StatTextRow(label: "CHA", value: game.character.cha)
                             StatTextRow(label: "ATK", value: game.attack)
                             StatTextRow(label: "DEF", value: game.defense)
-                            InfoRow(label: "HP Max", value: "\(game.hpMax)")
-                            InfoRow(label: "MP Max", value: "\(game.mpMax)")
-                        }
-                    }
-
-                    SectionPanel(title: "Experience", height: 56) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("\(game.experience)/\(game.experienceToNextLevel)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                            InfoRow(label: "HP", value: "\(game.hpMax)")
+                            InfoRow(label: "MP", value: "\(game.currentMPInt)/\(game.mpMax)")
+                            Spacer(minLength: 0)
+                            Divider()
                             ProgressView(value: game.experienceProgress)
+                                .frame(maxWidth: .infinity)
                         }
                     }
 
                     SectionPanel(title: "Spell Book") {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Spell")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 6) {
+                                Text("Spell")
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Text("Lvl")
+                                    .frame(width: 28, alignment: .trailing)
+                                Text("MP")
+                                    .frame(width: 28, alignment: .trailing)
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                             Divider()
-                            Text("-")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+
+                            if game.knownSpells.isEmpty {
+                                Text("No known spells")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(game.knownSpells.prefix(10)) { spell in
+                                    HStack(spacing: 6) {
+                                        Text(spell.name)
+                                            .lineLimit(1)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        Text(game.romanNumeral(spell.level))
+                                            .frame(width: 28, alignment: .trailing)
+                                        Text("\(game.spellManaCost(for: spell))")
+                                            .monospacedDigit()
+                                            .frame(width: 28, alignment: .trailing)
+                                    }
+                                    .font(.caption)
+                                }
+                            }
+
                             Spacer()
                         }
                         .frame(maxHeight: .infinity, alignment: .top)
@@ -63,7 +86,7 @@ struct GameView: View {
                             ForEach(EquipmentSlot.allCases, id: \.self) { slot in
                                 HStack(spacing: 6) {
                                     Text(slot.rawValue)
-                                        .frame(width: 64, alignment: .leading)
+                                        .frame(width: 82, alignment: .leading)
                                     Text(game.equipment[slot]?.name ?? "-")
                                         .lineLimit(1)
                                         .frame(maxWidth: .infinity, alignment: .leading)

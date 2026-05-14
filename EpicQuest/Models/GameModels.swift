@@ -1,5 +1,10 @@
 import Foundation
 
+enum ClassArchetype {
+    case warrior
+    case magic
+}
+
 enum GameData {
     static let races = [
         "Half Orc", "Half Man", "Half Halfling", "Double Hobbit", "Hob-Hobbit",
@@ -12,6 +17,23 @@ enum GameData {
         "Shiv-Knight", "Inner Mason", "Fighter/Organist", "Puma Burgular", "Runeloremaster",
         "Hunter Strangler", "Battle-Felon", "Tickle-Mimic", "Slow Poisoner", "Bastard Lunatic"
     ]
+
+    static func classArchetype(for className: String) -> ClassArchetype {
+        let magicClasses: Set<String> = [
+            "Voodoo Princess", "Robot Monk", "Mu-Fu Monk", "Mage Illusioner",
+            "Inner Mason", "Runeloremaster", "Tickle-Mimic", "Slow Poisoner"
+        ]
+        return magicClasses.contains(className) ? .magic : .warrior
+    }
+
+    static func classLabel(for className: String) -> String {
+        switch classArchetype(for: className) {
+        case .warrior:
+            return "[W] \(className)"
+        case .magic:
+            return "[M] \(className)"
+        }
+    }
 }
 
 enum GamePhase: String, Codable {
@@ -22,10 +44,15 @@ enum GamePhase: String, Codable {
 enum EquipmentSlot: String, CaseIterable, Codable {
     case weapon = "Weapon"
     case shield = "Shield"
-    case armor = "Armor"
     case helm = "Helm"
-    case ring = "Ring"
-    case boots = "Boots"
+    case hauberk = "Hauberk"
+    case brassairts = "Brassairts"
+    case vambraces = "Vambraces"
+    case gauntlets = "Gauntlets"
+    case gambeson = "Gambeson"
+    case cuisses = "Cuisses"
+    case greaves = "Greaves"
+    case solerets = "Solerets"
 
     var isWeaponLike: Bool {
         self == .weapon
@@ -88,6 +115,18 @@ struct ReadOnlyCheckItem: Identifiable {
     let isCompleted: Bool
 }
 
+struct SpellEntry: Identifiable, Codable {
+    let id: UUID
+    let name: String
+    var level: Int
+
+    init(id: UUID = UUID(), name: String, level: Int = 1) {
+        self.id = id
+        self.name = name
+        self.level = max(1, level)
+    }
+}
+
 struct GameSnapshot: Codable {
     let phase: GamePhase
     let character: CharacterData
@@ -95,6 +134,7 @@ struct GameSnapshot: Codable {
     let gold: Int
     let hpMax: Int
     let mpMax: Int
+    let currentMP: Double
     let experience: Int
     let experienceToNextLevel: Int
     let currentActNumber: Int
@@ -111,6 +151,7 @@ struct GameSnapshot: Codable {
     let inventory: [LootItem]
     let inventoryCapacity: Double
     let inventoryLoad: Double
+    let knownSpells: [SpellEntry]
     let logLine: String
     let isSellingInTown: Bool
     let actAttackBonus: Int

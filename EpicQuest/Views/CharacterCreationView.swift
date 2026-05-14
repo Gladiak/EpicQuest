@@ -32,7 +32,12 @@ struct CharacterCreationView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 ForEach(GameData.classes, id: \.self) { clazz in
-                                    SelectionCheckboxRow(label: clazz, isSelected: game.character.characterClass == clazz) {
+                                    let archetype = GameData.classArchetype(for: clazz)
+                                    SelectionCheckboxRow(
+                                        label: GameData.classLabel(for: clazz),
+                                        isSelected: game.character.characterClass == clazz,
+                                        textColor: archetype == .warrior ? .orange : .blue
+                                    ) {
                                         game.character.characterClass = clazz
                                     }
                                 }
@@ -55,14 +60,23 @@ struct CharacterCreationView: View {
                         StatRow(label: "CHA", value: game.character.cha)
 
                         Divider()
-                        StatRow(label: "Total", value: game.character.totalStats)
+                        HStack {
+                            Text("Total")
+                            Spacer()
+                            Text("\(game.character.totalStats)")
+                                .monospacedDigit()
+                                .foregroundStyle(game.character.totalStats > 80 ? Color.red : Color.primary)
+                        }
+                        .font(.caption)
 
                         Spacer()
 
-                        Button("Roll") { game.rollStats() }
-                            .frame(maxWidth: .infinity)
-                        Button("Unroll") { game.unrollStats() }
-                            .frame(maxWidth: .infinity)
+                        HStack(spacing: 8) {
+                            Button("Roll") { game.rollStats() }
+                                .frame(maxWidth: .infinity)
+                            Button("Unroll") { game.unrollStats() }
+                                .frame(maxWidth: .infinity)
+                        }
                     }
                     .padding(8)
                 }

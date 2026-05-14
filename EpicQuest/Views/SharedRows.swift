@@ -61,6 +61,7 @@ struct ReadOnlyCheckRow: View {
 struct SelectionCheckboxRow: View {
     let label: String
     let isSelected: Bool
+    let textColor: Color
     let action: () -> Void
 
     var body: some View {
@@ -69,7 +70,7 @@ struct SelectionCheckboxRow: View {
                 Image(systemName: isSelected ? "checkmark.square.fill" : "square")
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                 Text(label)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(textColor)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
@@ -77,6 +78,15 @@ struct SelectionCheckboxRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
+    }
+}
+
+extension SelectionCheckboxRow {
+    init(label: String, isSelected: Bool, action: @escaping () -> Void) {
+        self.label = label
+        self.isSelected = isSelected
+        self.textColor = .primary
+        self.action = action
     }
 }
 
