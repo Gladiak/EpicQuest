@@ -1,16 +1,16 @@
 # EpicQuest
 
-EpicQuest è un RPG idle/comedy in SwiftUI per macOS, ispirato al tono classico di Progress Quest: il personaggio avanza automaticamente tra quest, combattimenti, loot, vendita in città, upgrade e progressione continua.
+EpicQuest is an idle/comedy RPG built with SwiftUI for macOS, inspired by the classic Progress Quest tone: your character advances automatically through quests, battles, loot, town selling, upgrades, and long-term progression.
 
 ## Highlights
 
-- Character creation con razza, classe e roll/unroll delle statistiche.
-- Progressione automatica con atti, quest e combattimenti.
-- Sistema loot con equipaggiamento multi-slot, qualità, bonus e naming procedurale.
-- Inventario con carico, ritorno al villaggio, vendita automatica e acquisti dal mercante.
-- Spell Book con drop rari da boss di fine atto, livelli spell e costi MP.
-- MP rigenerato nel tempo e utilizzo spell che accelera il killing rate.
-- Salvataggio e ripristino automatico dello stato di gioco.
+- Character creation with race, class, and stat roll/unroll.
+- Automatic progression through acts, quests, and battles.
+- Multi-slot equipment loot system with quality, bonuses, and procedural naming.
+- Inventory load management with return-to-town phase, auto-selling, and merchant upgrades.
+- Spell Book with rare end-of-act boss scroll drops, spell levels, and MP costs.
+- MP regeneration over time and spell usage that increases kill rate.
+- Automatic save/restore of full game state.
 
 ## Tech Stack
 
@@ -18,17 +18,17 @@ EpicQuest è un RPG idle/comedy in SwiftUI per macOS, ispirato al tono classico 
 - SwiftUI
 - macOS app target (Xcode)
 
-## Struttura Progetto
+## Project Structure
 
 ```text
 EpicQuest/
 ├─ EpicQuest/
-│  ├─ Game/                  # Logica di stato, progressione, loot, persistenza
-│  ├─ GameData/              # Pool nomi (quest, mostri, equip, spell, attributi)
-│  ├─ Models/                # Modelli dominio e snapshot salvataggio
-│  ├─ Views/                 # UI SwiftUI (creazione personaggio + game screen)
-│  ├─ UI/                    # Costanti/UI helpers
-│  ├─ Assets.xcassets/       # Asset catalog (icone, colori)
+│  ├─ Game/                  # State, progression, loot, persistence logic
+│  ├─ GameData/              # Name pools (quests, monsters, equipment, spells, attributes)
+│  ├─ Models/                # Domain models and save snapshots
+│  ├─ Views/                 # SwiftUI UI (character creation + game screen)
+│  ├─ UI/                    # UI constants/helpers
+│  ├─ Assets.xcassets/       # Asset catalog (icons, colors)
 │  ├─ ContentView.swift
 │  └─ EpicQuestApp.swift
 └─ Products/
@@ -36,45 +36,45 @@ EpicQuest/
 
 ## Gameplay Loop
 
-1. Crea personaggio (razza + classe).
-2. Roll stats e avvia avventura.
-3. Combatti automaticamente e completa quest/atti.
-4. Ottieni loot, equip automatico o stoccaggio in inventario.
-5. Quando l’inventario è pieno:
-   - ritorno al villaggio,
-   - vendita automatica,
-   - acquisti upgrade dal mercante,
-   - ripresa avventura.
-6. Boss di fine atto: chance bassa di drop scroll spell (scaling con atto/livello).
+1. Create a character (race + class).
+2. Roll stats and start the adventure.
+3. Fight automatically and complete quests/acts.
+4. Gain loot, auto-equip upgrades, or store items in inventory.
+5. When inventory is full:
+   - return to town,
+   - auto-sell loot,
+   - buy merchant upgrades,
+   - resume adventure.
+6. End-of-act bosses: low chance to drop spell scrolls (scales with act/level).
 
-## Requisiti
+## Requirements
 
 - macOS
-- Xcode recente con supporto SwiftUI
+- Recent Xcode version with SwiftUI support
 
-## Avvio Locale
+## Run Locally
 
-1. Apri il progetto in Xcode.
-2. Seleziona scheme `EpicQuest`.
+1. Open the project in Xcode.
+2. Select the `EpicQuest` scheme.
 3. Build & Run (`⌘R`).
 
-## Stato del Progetto
+## Project Status
 
-Progetto in sviluppo attivo. La base di gameplay è giocabile e già include:
+Active development. The core gameplay loop is already playable and includes:
 
-- progressione automatica,
-- economia (loot/sell/buy),
+- automatic progression,
+- economy loop (loot/sell/buy),
 - spell progression,
-- salvataggio persistente.
+- persistent saves.
 
-## Roadmap (idee)
+## Roadmap (Ideas)
 
-- Bilanciamento avanzato di curve XP/loot/drop.
-- Skill tree o talenti passivi per classe.
-- Più eventi casuali e contenuti di atto.
-- UI polish e visual feedback avanzati.
-- Metriche/debug panel per tuning gameplay.
+- Advanced balancing for XP/loot/drop curves.
+- Class talent tree or passive specialization.
+- More random events and act content.
+- Additional UI polish and richer visual feedback.
+- Metrics/debug panel for gameplay tuning.
 
-## Licenza
+## License
 
-Aggiungi qui la licenza desiderata (es. MIT) prima della pubblicazione.
+Add your preferred license here (for example MIT) before publishing.
