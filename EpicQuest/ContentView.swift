@@ -13,16 +13,11 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Color(nsColor: .windowBackgroundColor)
-                .ignoresSafeArea()
+            backgroundLayer
 
-            if game.phase == .characterCreation {
-                CharacterCreationView(game: $game)
-            } else {
-                GameView(game: $game)
-            }
+            mainContent
         }
-        .frame(width: UIConstants.windowSize, height: UIConstants.windowSize)
+        .frame(minWidth: UIConstants.windowWidth, minHeight: UIConstants.windowHeight)
         .navigationTitle("EpicQuest - \(game.character.name)")
         .onAppear {
             guard !isRunningPreview else { return }
@@ -34,7 +29,12 @@ struct ContentView: View {
             DispatchQueue.main.async {
                 NSApp.setActivationPolicy(.regular)
                 NSApp.activate(ignoringOtherApps: true)
-                NSApp.windows.first?.makeKeyAndOrderFront(nil)
+                if let window = NSApp.windows.first {
+                    let contentSize = NSSize(width: UIConstants.windowWidth, height: UIConstants.windowHeight)
+                    window.setContentSize(contentSize)
+                    window.contentMinSize = contentSize
+                    window.makeKeyAndOrderFront(nil)
+                }
             }
             #endif
         }
@@ -54,6 +54,57 @@ struct ContentView: View {
             if newPhase == .inactive || newPhase == .background {
                 game.saveCurrentGame()
             }
+        }
+    }
+
+    private var mainContent: some View {
+        Group {
+            if game.phase == .characterCreation {
+                CharacterCreationView(game: $game)
+            } else {
+                GameView(game: $game)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(8)
+    }
+
+    private var backgroundLayer: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    LiquidGlassPalette.backgroundTop,
+                    LiquidGlassPalette.backgroundMid,
+                    LiquidGlassPalette.backgroundBottom
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [
+                    Color.white.opacity(0.03),
+                    .clear
+                ],
+                center: .topLeading,
+                startRadius: 60,
+                endRadius: 420
+            )
+            .blur(radius: 10)
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [
+                    Color.white.opacity(0.02),
+                    .clear
+                ],
+                center: .bottomTrailing,
+                startRadius: 80,
+                endRadius: 460
+            )
+            .blur(radius: 12)
+            .ignoresSafeArea()
         }
     }
 }

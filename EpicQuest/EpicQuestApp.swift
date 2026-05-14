@@ -17,15 +17,12 @@ struct EpicQuestApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     #endif
 
-    private let fixedSize = CGSize(width: 760, height: 760)
-
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(width: fixedSize.width, height: fixedSize.height)
         }
-        .defaultSize(width: fixedSize.width, height: fixedSize.height)
-        .windowResizability(.contentSize)
+        .defaultSize(width: UIConstants.windowWidth, height: UIConstants.windowHeight)
+        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(after: .newItem) {
                 Divider()
