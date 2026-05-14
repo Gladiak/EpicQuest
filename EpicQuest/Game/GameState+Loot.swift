@@ -161,7 +161,7 @@ extension GameState {
                     name: boostedName,
                     power: boostedPower,
                     slot: candidate.slot,
-                    value: max(candidate.value, boostedPower * Int.random(in: 10...18)),
+                    value: max(candidate.value, boostedPower * Int.random(in: 18...30)),
                     weight: candidate.weight,
                     attackBonus: max(candidate.attackBonus, equipped.attackBonus),
                     defenseBonus: max(candidate.defenseBonus, equipped.defenseBonus),
@@ -170,11 +170,14 @@ extension GameState {
             }
         }
 
-        return candidate
+        return applyMerchantPricing(to: candidate, equipped: equipped)
     }
 
     func shouldBuyMerchantItem(_ candidate: LootItem) -> Bool {
-        guard let equipped = equipment[candidate.slot] else { return true }
+        guard let equipped = equipment[candidate.slot] else {
+            let baselineScore = max(8, level + currentActNumber * 2)
+            return itemScore(candidate) >= baselineScore
+        }
 
         let currentScore = itemScore(equipped)
         let candidateScore = itemScore(candidate)
@@ -184,11 +187,40 @@ extension GameState {
             return false
         }
 
-        return improvement >= 4 || candidate.power >= equipped.power + 2
+        let requiredImprovement = equipped.power <= 3 ? 5 : 7
+        if candidate.power >= equipped.power + 4 {
+            return true
+        }
+
+        let qualityStep = candidate.qualityModifier - equipped.qualityModifier
+        return improvement >= requiredImprovement && qualityStep >= 1
     }
 
     func itemScore(_ item: LootItem) -> Int {
         (item.power * 3) + (item.attackBonus * 2) + (item.defenseBonus * 2) + item.qualityModifier
+    }
+
+    func applyMerchantPricing(to candidate: LootItem, equipped: LootItem?) -> LootItem {
+        let equippedPower = equipped?.power ?? max(1, level / 2)
+        let powerDelta = max(0, candidate.power - equippedPower)
+        let qualityPremium = max(0, candidate.qualityModifier) * Int.random(in: 8...14)
+        let powerPremium = powerDelta * Int.random(in: 9...13)
+        let statPremium = (max(0, candidate.attackBonus) + max(0, candidate.defenseBonus)) * Int.random(in: 4...7)
+        let actPremium = max(0, currentActNumber) * Int.random(in: 14...22)
+        let markedBase = candidate.value + qualityPremium + powerPremium + statPremium + actPremium
+        let multiplier = Double.random(in: 1.65...2.35)
+        let markedValue = Int((Double(markedBase) * multiplier).rounded(.up))
+
+        return LootItem(
+            name: candidate.name,
+            power: candidate.power,
+            slot: candidate.slot,
+            value: max(candidate.value, markedValue),
+            weight: candidate.weight,
+            attackBonus: candidate.attackBonus,
+            defenseBonus: candidate.defenseBonus,
+            qualityModifier: candidate.qualityModifier
+        )
     }
 
     func equipItem(_ item: LootItem) {

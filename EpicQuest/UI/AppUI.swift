@@ -6,4 +6,7 @@ enum UIConstants {
 
 extension Notification.Name {
     static let progressQuestStartNewGame = Notification.Name("progressQuestStartNewGame")
+    static let progressQuestIncreaseGameSpeed = Notification.Name("progressQuestIncreaseGameSpeed")
+    static let progressQuestDecreaseGameSpeed = Notification.Name("progressQuestDecreaseGameSpeed")
+    static let progressQuestResetGameSpeed = Notification.Name("progressQuestResetGameSpeed")
 }

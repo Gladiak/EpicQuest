@@ -41,6 +41,15 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .progressQuestStartNewGame)) { _ in
             game.resetToNewCharacter()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .progressQuestIncreaseGameSpeed)) { _ in
+            game.increaseGameSpeed()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .progressQuestDecreaseGameSpeed)) { _ in
+            game.decreaseGameSpeed()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .progressQuestResetGameSpeed)) { _ in
+            game.resetGameSpeedToDefault()
+        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .inactive || newPhase == .background {
                 game.saveCurrentGame()

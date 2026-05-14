@@ -3,6 +3,15 @@ import SwiftUI
 
 @Observable
 final class GameState {
+    private enum SpeedTuning {
+        static let defaultMultiplier = 1.0
+        static let step = 10.0
+        static let minMultiplier = 1.0
+        static let maxMultiplier = 1000.0
+        static let baseTickMilliseconds = 250
+        static let allowedMultipliers: [Double] = [1.0] + stride(from: 10, through: 1000, by: 10).map(Double.init)
+    }
+
     var phase: GamePhase = .characterCreation
     var character = CharacterData()
 
@@ -141,6 +150,7 @@ final class GameState {
     var baseInt = 0
     var baseWis = 0
     var baseCha = 0
+    var gameSpeedMultiplier = SpeedTuning.defaultMultiplier
 
     func startTimerIfNeeded() {
         guard !timerStarted else { return }
@@ -148,9 +158,10 @@ final class GameState {
 
         timerTask = Task {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(250))
+                let sleepMilliseconds = await MainActor.run { tickIntervalMilliseconds() }
+                try? await Task.sleep(for: .milliseconds(sleepMilliseconds))
                 await MainActor.run {
-                    tick()
+                    runTimerStep()
                 }
             }
         }
@@ -240,6 +251,26 @@ final class GameState {
         character.name = EpicCharacterNames.randomName()
     }
 
+    func increaseGameSpeed() {
+        guard let next = SpeedTuning.allowedMultipliers.first(where: { $0 > gameSpeedMultiplier }) else {
+            setGameSpeedMultiplier(SpeedTuning.maxMultiplier)
+            return
+        }
+        setGameSpeedMultiplier(next)
+    }
+
+    func decreaseGameSpeed() {
+        guard let previous = SpeedTuning.allowedMultipliers.reversed().first(where: { $0 < gameSpeedMultiplier }) else {
+            setGameSpeedMultiplier(SpeedTuning.minMultiplier)
+            return
+        }
+        setGameSpeedMultiplier(previous)
+    }
+
+    func resetGameSpeedToDefault() {
+        setGameSpeedMultiplier(SpeedTuning.defaultMultiplier)
+    }
+
     func startAdventure() {
         phase = .adventuring
         level = 1
@@ -278,7 +309,18 @@ final class GameState {
         saveCurrentGame()
     }
 
-    func tick() {
+    func runTimerStep() {
+        let burstTicks = tickBurstCount()
+        for index in 0..<burstTicks {
+            let shouldSave = index == burstTicks - 1
+            tick(shouldSave: shouldSave)
+            if phase != .adventuring {
+                break
+            }
+        }
+    }
+
+    func tick(shouldSave: Bool = true) {
         guard phase == .adventuring else { return }
 
         regenerateMP()
@@ -293,20 +335,26 @@ final class GameState {
             } else {
                 logLine = "Returning to town..."
             }
-            saveCurrentGame()
+            if shouldSave {
+                saveCurrentGame()
+            }
             return
         }
 
         if isSellingInTown {
             sellStep()
-            saveCurrentGame()
+            if shouldSave {
+                saveCurrentGame()
+            }
             return
         }
 
         castBestSpellIfPossible()
         battleProgress += battleTickStep
         if battleProgress < BalanceTuning.battleProgressTarget {
-            saveCurrentGame()
+            if shouldSave {
+                saveCurrentGame()
+            }
             return
         }
 
@@ -319,7 +367,9 @@ final class GameState {
             startReturningToTown(reason: "Backpack full. Returning to town...", travelTicks: 8)
         }
 
-        saveCurrentGame()
+        if shouldSave {
+            saveCurrentGame()
+        }
     }
 
     func captureBaseStatsFromCurrentCharacter() {
@@ -347,6 +397,22 @@ final class GameState {
 
     func clampedProgress(_ value: Double) -> Double {
         min(max(value, 0), 1)
+    }
+
+    func tickIntervalMilliseconds() -> Int {
+        SpeedTuning.baseTickMilliseconds
+    }
+
+    func tickBurstCount() -> Int {
+        let safeSpeed = max(SpeedTuning.minMultiplier, min(SpeedTuning.maxMultiplier, gameSpeedMultiplier))
+        return max(1, Int(safeSpeed.rounded()))
+    }
+
+    func setGameSpeedMultiplier(_ value: Double) {
+        let clamped = max(SpeedTuning.minMultiplier, min(SpeedTuning.maxMultiplier, value))
+        let rounded = SpeedTuning.allowedMultipliers.min(by: { abs($0 - clamped) < abs($1 - clamped) }) ?? SpeedTuning.defaultMultiplier
+        gameSpeedMultiplier = rounded
+        logLine = String(format: "Developer speed set to x%.0f", rounded)
     }
 
     func startReturningToTown(reason: String, travelTicks: Int) {
