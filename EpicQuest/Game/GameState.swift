@@ -16,6 +16,8 @@ final class GameState {
     var character = CharacterData()
 
     var level = 1
+    var honorLevel = 0
+    var honorMilestonesEarned = 0
     var gold = 0
     var hpMax = 10
     var currentHP = 10.0
@@ -38,6 +40,12 @@ final class GameState {
     var currentMonster = "Training Dummy"
     var currentMonsterType: MonsterType = .common
     var battleProgress = 0.0
+    var battlesUntilNextArena = BalanceTuning.arenaBattleInterval
+    var isArenaActive = false
+    var arenaRound = 0
+    var arenaRoundsTotal = 0
+    var arenaWins = 0
+    var arenaLosses = 0
 
     var equipment: [EquipmentSlot: LootItem] = [:]
     var inventory: [LootItem] = []
@@ -177,6 +185,8 @@ final class GameState {
         phase = .characterCreation
         character = CharacterData()
         level = 1
+        honorLevel = 0
+        honorMilestonesEarned = 0
         gold = 0
         hpMax = 10
         currentHP = 10
@@ -198,6 +208,12 @@ final class GameState {
         currentMonster = "Training Dummy"
         currentMonsterType = .common
         battleProgress = 0
+        battlesUntilNextArena = BalanceTuning.arenaBattleInterval
+        isArenaActive = false
+        arenaRound = 0
+        arenaRoundsTotal = 0
+        arenaWins = 0
+        arenaLosses = 0
 
         equipment.removeAll()
         inventory.removeAll()
@@ -274,6 +290,8 @@ final class GameState {
     func startAdventure() {
         phase = .adventuring
         level = 1
+        honorLevel = 0
+        honorMilestonesEarned = 0
         gold = 0
         hpMax = 10
         currentHP = 10
@@ -286,6 +304,12 @@ final class GameState {
         completedActs.removeAll()
         questsCompletedInCurrentAct = 0
         questsPerAct = questsRequiredForCurrentAct()
+        battlesUntilNextArena = BalanceTuning.arenaBattleInterval
+        isArenaActive = false
+        arenaRound = 0
+        arenaRoundsTotal = 0
+        arenaWins = 0
+        arenaLosses = 0
 
         completedQuestNames.removeAll()
         startNewQuest(isPrologue: true)
@@ -362,8 +386,15 @@ final class GameState {
         resolveBattle()
 
         if currentHP <= 1 {
-            startReturningToTown(reason: "Critically wounded. Retreating to town...", travelTicks: 1)
-        } else if inventoryProgress >= 1 {
+            var retreatReason = "Critically wounded. Retreating to town..."
+            if isArenaActive {
+                let arenaLossSummary = forfeitArenaRun()
+                if !arenaLossSummary.isEmpty {
+                    retreatReason += " \(arenaLossSummary)"
+                }
+            }
+            startReturningToTown(reason: retreatReason, travelTicks: 1)
+        } else if !isArenaActive && inventoryProgress >= 1 {
             startReturningToTown(reason: "Backpack full. Returning to town...", travelTicks: 8)
         }
 
@@ -392,7 +423,7 @@ final class GameState {
     func statDisplay(current: Int, base: Int) -> String {
         let delta = current - base
         let sign = delta >= 0 ? "+" : ""
-        return "\(current)\t(\(base) \(sign)\(delta))"
+        return "\(current)\t[\(sign)\(delta)]"
     }
 
     func clampedProgress(_ value: Double) -> Double {

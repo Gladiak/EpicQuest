@@ -12,6 +12,8 @@ extension GameState {
             phase: phase,
             character: character,
             level: level,
+            honorLevel: honorLevel,
+            honorMilestonesEarned: honorMilestonesEarned,
             gold: gold,
             hpMax: hpMax,
             currentHP: currentHP,
@@ -30,6 +32,12 @@ extension GameState {
             currentMonster: currentMonster,
             currentMonsterType: currentMonsterType,
             battleProgress: battleProgress,
+            battlesUntilNextArena: battlesUntilNextArena,
+            isArenaActive: isArenaActive,
+            arenaRound: arenaRound,
+            arenaRoundsTotal: arenaRoundsTotal,
+            arenaWins: arenaWins,
+            arenaLosses: arenaLosses,
             equipment: equipment,
             inventory: inventory,
             inventoryCapacity: inventoryCapacity,
@@ -54,6 +62,8 @@ extension GameState {
         phase = snapshot.phase
         character = snapshot.character
         level = snapshot.level
+        honorLevel = max(0, snapshot.honorLevel)
+        honorMilestonesEarned = max(0, snapshot.honorMilestonesEarned)
         gold = snapshot.gold
         hpMax = snapshot.hpMax
         currentHP = min(Double(snapshot.hpMax), max(1, snapshot.currentHP))
@@ -72,6 +82,12 @@ extension GameState {
         currentMonster = snapshot.currentMonster
         currentMonsterType = snapshot.currentMonsterType
         battleProgress = snapshot.battleProgress
+        battlesUntilNextArena = max(1, snapshot.battlesUntilNextArena)
+        isArenaActive = snapshot.isArenaActive
+        arenaRound = max(0, snapshot.arenaRound)
+        arenaRoundsTotal = max(0, snapshot.arenaRoundsTotal)
+        arenaWins = max(0, snapshot.arenaWins)
+        arenaLosses = max(0, snapshot.arenaLosses)
         equipment = snapshot.equipment
         inventory = snapshot.inventory
         inventoryCapacity = snapshot.inventoryCapacity
@@ -89,6 +105,8 @@ extension GameState {
         baseCha = snapshot.baseCha
         actAttackBonus = snapshot.actAttackBonus
         actDefenseBonus = snapshot.actDefenseBonus
+        synchronizeHonorMilestonesWithCurrentHonor()
+        sanitizeArenaStateAfterLoad()
         rebuildCombatBonusesFromEquipment()
         rebalanceResourceMinimumsForCurrentLevel()
     }

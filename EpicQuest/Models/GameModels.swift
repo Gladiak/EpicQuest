@@ -138,6 +138,8 @@ struct GameSnapshot: Codable {
     let phase: GamePhase
     let character: CharacterData
     let level: Int
+    let honorLevel: Int
+    let honorMilestonesEarned: Int
     let gold: Int
     let hpMax: Int
     let currentHP: Double
@@ -156,6 +158,12 @@ struct GameSnapshot: Codable {
     let currentMonster: String
     let currentMonsterType: MonsterType
     let battleProgress: Double
+    let battlesUntilNextArena: Int
+    let isArenaActive: Bool
+    let arenaRound: Int
+    let arenaRoundsTotal: Int
+    let arenaWins: Int
+    let arenaLosses: Int
     let equipment: [EquipmentSlot: LootItem]
     let inventory: [LootItem]
     let inventoryCapacity: Double
@@ -175,11 +183,12 @@ struct GameSnapshot: Codable {
     let actDefenseBonus: Int
 
     enum CodingKeys: String, CodingKey {
-        case phase, character, level, gold, hpMax, currentHP, mpMax, currentMP
+        case phase, character, level, honorLevel, honorMilestonesEarned, gold, hpMax, currentHP, mpMax, currentMP
         case experience, experienceToNextLevel
         case currentActNumber, completedActs, questsCompletedInCurrentAct, questsPerAct
         case completedQuestNames, currentQuest, battlesPerQuest, completedBattlesInQuest
         case currentMonster, currentMonsterType, battleProgress
+        case battlesUntilNextArena, isArenaActive, arenaRound, arenaRoundsTotal, arenaWins, arenaLosses
         case equipment, inventory, inventoryCapacity, inventoryLoad
         case knownSpells, logLine, isSellingInTown, isReturningToTown, returnToTownTicksRemaining
         case baseStr, baseCon, baseDex, baseInt, baseWis, baseCha
@@ -190,6 +199,8 @@ struct GameSnapshot: Codable {
         phase: GamePhase,
         character: CharacterData,
         level: Int,
+        honorLevel: Int,
+        honorMilestonesEarned: Int,
         gold: Int,
         hpMax: Int,
         currentHP: Double,
@@ -208,6 +219,12 @@ struct GameSnapshot: Codable {
         currentMonster: String,
         currentMonsterType: MonsterType,
         battleProgress: Double,
+        battlesUntilNextArena: Int,
+        isArenaActive: Bool,
+        arenaRound: Int,
+        arenaRoundsTotal: Int,
+        arenaWins: Int,
+        arenaLosses: Int,
         equipment: [EquipmentSlot: LootItem],
         inventory: [LootItem],
         inventoryCapacity: Double,
@@ -229,6 +246,8 @@ struct GameSnapshot: Codable {
         self.phase = phase
         self.character = character
         self.level = level
+        self.honorLevel = honorLevel
+        self.honorMilestonesEarned = honorMilestonesEarned
         self.gold = gold
         self.hpMax = hpMax
         self.currentHP = currentHP
@@ -247,6 +266,12 @@ struct GameSnapshot: Codable {
         self.currentMonster = currentMonster
         self.currentMonsterType = currentMonsterType
         self.battleProgress = battleProgress
+        self.battlesUntilNextArena = battlesUntilNextArena
+        self.isArenaActive = isArenaActive
+        self.arenaRound = arenaRound
+        self.arenaRoundsTotal = arenaRoundsTotal
+        self.arenaWins = arenaWins
+        self.arenaLosses = arenaLosses
         self.equipment = equipment
         self.inventory = inventory
         self.inventoryCapacity = inventoryCapacity
@@ -272,6 +297,8 @@ struct GameSnapshot: Codable {
         phase = try c.decode(GamePhase.self, forKey: .phase)
         character = try c.decode(CharacterData.self, forKey: .character)
         level = try c.decode(Int.self, forKey: .level)
+        honorLevel = max(0, try c.decodeIfPresent(Int.self, forKey: .honorLevel) ?? 0)
+        honorMilestonesEarned = max(0, try c.decodeIfPresent(Int.self, forKey: .honorMilestonesEarned) ?? 0)
         gold = try c.decode(Int.self, forKey: .gold)
         hpMax = try c.decode(Int.self, forKey: .hpMax)
         currentHP = try c.decodeIfPresent(Double.self, forKey: .currentHP) ?? Double(hpMax)
@@ -291,6 +318,12 @@ struct GameSnapshot: Codable {
         currentMonsterType = try c.decodeIfPresent(MonsterType.self, forKey: .currentMonsterType)
             ?? MonsterNames.legacyType(for: currentMonster)
         battleProgress = try c.decode(Double.self, forKey: .battleProgress)
+        battlesUntilNextArena = max(1, try c.decodeIfPresent(Int.self, forKey: .battlesUntilNextArena) ?? 7)
+        isArenaActive = try c.decodeIfPresent(Bool.self, forKey: .isArenaActive) ?? false
+        arenaRound = max(0, try c.decodeIfPresent(Int.self, forKey: .arenaRound) ?? 0)
+        arenaRoundsTotal = max(0, try c.decodeIfPresent(Int.self, forKey: .arenaRoundsTotal) ?? 0)
+        arenaWins = max(0, try c.decodeIfPresent(Int.self, forKey: .arenaWins) ?? 0)
+        arenaLosses = max(0, try c.decodeIfPresent(Int.self, forKey: .arenaLosses) ?? 0)
         equipment = try c.decode([EquipmentSlot: LootItem].self, forKey: .equipment)
         inventory = try c.decode([LootItem].self, forKey: .inventory)
         inventoryCapacity = try c.decode(Double.self, forKey: .inventoryCapacity)

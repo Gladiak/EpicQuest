@@ -123,10 +123,12 @@ extension GameState {
     }
 
     func generateMerchantUpgrade(for slot: EquipmentSlot) -> LootItem {
-        let merchantLevel = max(level + 2, level + currentActNumber)
+        let honorTierBonus = merchantHonorTier()
+        let merchantLevelBonus = max(0, honorTierBonus - 1)
+        let merchantLevel = max(level + 2 + merchantLevelBonus, level + currentActNumber + merchantLevelBonus)
         let equipped = equipment[slot]
         let preferredBase = equipped.flatMap { canonicalBaseName(from: $0.name, slot: slot) }
-        let minimumQuality = equipped.map { $0.qualityModifier + 1 }
+        let minimumQuality = (equipped?.qualityModifier ?? -10) + 1 + honorTierBonus
 
         var candidate = generateLoot(
             for: merchantLevel,
@@ -138,11 +140,12 @@ extension GameState {
 
         if let equipped {
             var rerolls = 0
-            while candidate.power <= equipped.power && rerolls < 6 {
+            let rerollCap = 6 + honorTierBonus
+            while candidate.power <= equipped.power && rerolls < rerollCap {
                 candidate = generateLoot(
                     for: merchantLevel + 1 + rerolls,
                     forcedSlot: slot,
-                    minimumQuality: equipped.qualityModifier + 1,
+                    minimumQuality: equipped.qualityModifier + 1 + honorTierBonus,
                     preferredBaseName: preferredBase,
                     allowFlavorModifier: false
                 )
@@ -150,8 +153,8 @@ extension GameState {
             }
 
             if candidate.power <= equipped.power {
-                let boostedPower = equipped.power + Int.random(in: 1...2)
-                let boostedQuality = max(candidate.qualityModifier, equipped.qualityModifier + 1)
+                let boostedPower = equipped.power + Int.random(in: 1...(2 + honorTierBonus))
+                let boostedQuality = max(candidate.qualityModifier, equipped.qualityModifier + 1 + honorTierBonus)
                 let boostedName = composeItemName(
                     base: preferredBase ?? baseName(for: slot),
                     quality: boostedQuality,

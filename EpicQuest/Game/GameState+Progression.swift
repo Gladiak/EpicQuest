@@ -16,6 +16,24 @@ enum BalanceTuning {
     static let xpPerMonsterLevel = 2
     static let baseGoldPerBattle = 1
     static let goldPerMonsterLevel = 1
+    static let arenaXPBonusBase = 4
+    static let arenaXPBonusPerRound = 2
+    static let arenaGoldBonusBase = 3
+    static let arenaGoldBonusPerRound = 2
+    static let arenaLootQualityBonus = 3
+    static let arenaMonsterLevelBonus = 4
+    static let arenaMonsterLevelBonusPerRound = 2
+    static let arenaIncomingDamageLevelBonus = 1
+    static let arenaBattleInterval = 6
+    static let arenaBaseRounds = 3
+    static let arenaRoundActDivisor = 3
+    static let arenaRoundCap = 4
+    static let honorPerTier = 24
+    static let maxHonorTier = 5
+    static let honorGainArenaRound = 1
+    static let honorGainArenaClear = 4
+    static let honorLossArenaForfeit = 5
+    static let honorMilestoneStep = 20
 
     static let experienceGrowthBase = 1.17
     static let experienceGrowthLevelScale = 0.005
@@ -88,21 +106,43 @@ extension GameState {
     func resolveBattle() {
         let defeatedMonster = currentMonster
         let defeatedMonsterType = currentMonsterType
-        let wasActBossBattle = isActBossBattle()
-        let monsterLevel = currentEncounterMonsterLevel(
-            monsterType: defeatedMonsterType,
-            isBossBattle: wasActBossBattle
-        )
+        let wasArenaBattle = isArenaActive
+        let completedArenaRound = arenaRound
+        let completedArenaTotal = arenaRoundsTotal
+        let wasActBossBattle = !wasArenaBattle && isActBossBattle()
+        let isArenaFinalRound = wasArenaBattle && completedArenaRound >= completedArenaTotal && completedArenaTotal > 0
 
-        let gainedXP = BalanceTuning.baseXPPerBattle + monsterLevel * BalanceTuning.xpPerMonsterLevel
-        let gainedGold = BalanceTuning.baseGoldPerBattle + monsterLevel * BalanceTuning.goldPerMonsterLevel
+        var monsterLevel = currentEncounterMonsterLevel(
+            monsterType: defeatedMonsterType,
+            isBossBattle: wasActBossBattle || isArenaFinalRound
+        )
+        if wasArenaBattle {
+            monsterLevel += BalanceTuning.arenaMonsterLevelBonus
+                + (max(0, completedArenaRound - 1) * BalanceTuning.arenaMonsterLevelBonusPerRound)
+        }
+
+        var gainedXP = BalanceTuning.baseXPPerBattle + monsterLevel * BalanceTuning.xpPerMonsterLevel
+        var gainedGold = BalanceTuning.baseGoldPerBattle + monsterLevel * BalanceTuning.goldPerMonsterLevel
+        if wasArenaBattle {
+            gainedXP += BalanceTuning.arenaXPBonusBase + completedArenaRound * BalanceTuning.arenaXPBonusPerRound
+            gainedGold += BalanceTuning.arenaGoldBonusBase + completedArenaRound * BalanceTuning.arenaGoldBonusPerRound
+        }
         experience += gainedXP
         gold += gainedGold
 
-        let incomingDamage = computeIncomingDamage(monsterLevel: monsterLevel, isBossBattle: wasActBossBattle)
+        let incomingDamageLevel = wasArenaBattle
+            ? monsterLevel + BalanceTuning.arenaIncomingDamageLevelBonus + max(0, completedArenaRound - 1)
+            : monsterLevel
+        let incomingDamage = computeIncomingDamage(
+            monsterLevel: incomingDamageLevel,
+            isBossBattle: wasActBossBattle || isArenaFinalRound
+        )
         currentHP = max(1, currentHP - Double(incomingDamage))
 
-        let lootBias = MonsterNames.lootQualityBias(for: defeatedMonsterType, isActBossBattle: wasActBossBattle)
+        var lootBias = MonsterNames.lootQualityBias(for: defeatedMonsterType, isActBossBattle: wasActBossBattle)
+        if wasArenaBattle {
+            lootBias += BalanceTuning.arenaLootQualityBonus + completedArenaRound
+        }
         let loot = generateLoot(for: monsterLevel, qualityBias: lootBias)
         autoEquipOrStore(loot)
 
@@ -113,15 +153,183 @@ extension GameState {
 
         levelUpIfNeeded()
 
+        var encounterSummary = ""
+        if wasArenaBattle {
+            encounterSummary = resolveArenaAfterVictory(monsterLevel: monsterLevel)
+        } else {
+            resolveQuestProgressAfterBattle()
+            startArenaRunIfReady()
+        }
+
+        let hpSuffix = " Took \(incomingDamage) dmg. HP \(currentHPInt)/\(hpMax)."
+        let arenaSuffix: String
+        if wasArenaBattle, completedArenaTotal > 0 {
+            arenaSuffix = " [Arena \(romanNumeral(max(1, completedArenaRound)))/\(romanNumeral(max(1, completedArenaTotal)))]"
+        } else {
+            arenaSuffix = ""
+        }
+        logLine = "Executing \(defeatedMonster)\(arenaSuffix)...\(spellDropMessage)\(encounterSummary)\(hpSuffix)"
+    }
+
+    func resolveQuestProgressAfterBattle() {
         completedBattlesInQuest += 1
         if completedBattlesInQuest >= battlesPerQuest {
             completeCurrentQuest()
         } else {
             prepareNextEncounterMonster()
         }
+        updateArenaCadenceAfterRegularBattle()
+    }
 
-        let hpSuffix = " Took \(incomingDamage) dmg. HP \(currentHPInt)/\(hpMax)."
-        logLine = "Executing \(defeatedMonster)...\(spellDropMessage)\(hpSuffix)"
+    func updateArenaCadenceAfterRegularBattle() {
+        guard currentActNumber > 0 else { return }
+        guard !isArenaActive else { return }
+
+        battlesUntilNextArena = max(0, battlesUntilNextArena - 1)
+    }
+
+    func startArenaRunIfReady() {
+        guard currentActNumber > 0 else { return }
+        guard !isArenaActive else { return }
+        guard battlesUntilNextArena == 0 else { return }
+
+        isArenaActive = true
+        arenaRound = 1
+        arenaRoundsTotal = arenaRoundsForCurrentState()
+        battlesUntilNextArena = BalanceTuning.arenaBattleInterval
+        prepareNextEncounterMonster()
+    }
+
+    func arenaRoundsForCurrentState() -> Int {
+        let actBonus = max(0, currentActNumber - 1) / BalanceTuning.arenaRoundActDivisor
+        let honorBonus = max(0, honorTier() / 2)
+        let total = BalanceTuning.arenaBaseRounds + actBonus + honorBonus
+        return min(BalanceTuning.arenaRoundCap, max(1, total))
+    }
+
+    func resolveArenaAfterVictory(monsterLevel: Int) -> String {
+        guard isArenaActive else { return "" }
+
+        let roundGain = updateHonor(by: BalanceTuning.honorGainArenaRound)
+        if arenaRound >= arenaRoundsTotal {
+            let clearGain = updateHonor(by: BalanceTuning.honorGainArenaClear + max(0, currentActNumber / 3))
+            arenaWins += 1
+            let reward = applyArenaClearRewards(monsterLevel: monsterLevel)
+            finishArenaRun()
+            let totalHonorGain = max(0, roundGain) + max(0, clearGain)
+            return " Arena cleared. Honor +\(totalHonorGain). Reward: \(reward.name)."
+        }
+
+        arenaRound += 1
+        prepareNextEncounterMonster()
+        return " Arena round cleared. Honor +\(max(0, roundGain))."
+    }
+
+    func applyArenaClearRewards(monsterLevel: Int) -> LootItem {
+        let minimumQuality = max(0, honorTier() + currentActNumber / 2)
+        let qualityBias = BalanceTuning.arenaLootQualityBonus + honorTier()
+        let reward = generateLoot(
+            for: monsterLevel + 1 + honorTier(),
+            minimumQuality: minimumQuality,
+            qualityBias: qualityBias
+        )
+        autoEquipOrStore(reward)
+        return reward
+    }
+
+    func forfeitArenaRun() -> String {
+        guard isArenaActive else { return "" }
+        let lostHonor = abs(min(0, updateHonor(by: -BalanceTuning.honorLossArenaForfeit)))
+        arenaLosses += 1
+        finishArenaRun()
+        return "Arena run failed. Honor -\(lostHonor)."
+    }
+
+    func finishArenaRun() {
+        isArenaActive = false
+        arenaRound = 0
+        arenaRoundsTotal = 0
+        battlesUntilNextArena = max(1, battlesUntilNextArena)
+        prepareNextEncounterMonster()
+    }
+
+    func arenaEncounterMonsterType() -> MonsterType {
+        guard arenaRoundsTotal > 0 else { return .elite }
+        if arenaRound >= arenaRoundsTotal { return .apex }
+        if arenaRound + 1 >= arenaRoundsTotal { return .apex }
+        return .elite
+    }
+
+    func honorTier() -> Int {
+        min(BalanceTuning.maxHonorTier, max(0, honorLevel / BalanceTuning.honorPerTier))
+    }
+
+    func merchantHonorTier() -> Int {
+        honorTier()
+    }
+
+    @discardableResult
+    func updateHonor(by amount: Int) -> Int {
+        guard amount != 0 else { return 0 }
+
+        let previous = honorLevel
+        honorLevel = max(0, honorLevel + amount)
+        let appliedDelta = honorLevel - previous
+
+        if appliedDelta > 0 {
+            synchronizeHonorMilestonesWithCurrentHonor()
+        }
+
+        return appliedDelta
+    }
+
+    func synchronizeHonorMilestonesWithCurrentHonor() {
+        let targetMilestones = max(0, honorLevel / BalanceTuning.honorMilestoneStep)
+        while honorMilestonesEarned < targetMilestones {
+            honorMilestonesEarned += 1
+            grantHonorMilestoneGrowth(at: honorMilestonesEarned)
+        }
+    }
+
+    func grantHonorMilestoneGrowth(at milestone: Int) {
+        let statPaths: [WritableKeyPath<CharacterData, Int>] = [\.str, \.con, \.dex, \.int, \.wis, \.cha]
+        let index = deterministicInt(level: milestone, salt: 709, seed: growthSeed(), modulo: statPaths.count)
+        let keyPath = statPaths[index]
+
+        character[keyPath: keyPath] += 1
+
+        if keyPath == \CharacterData.con {
+            hpMax += 1
+            currentHP = min(Double(hpMax), currentHP + 1)
+        }
+
+        if keyPath == \CharacterData.int {
+            mpMax += 1
+            currentMP = min(Double(mpMax), currentMP + 1)
+        }
+    }
+
+    func sanitizeArenaStateAfterLoad() {
+        battlesUntilNextArena = max(1, battlesUntilNextArena)
+
+        guard phase == .adventuring, currentActNumber > 0 else {
+            isArenaActive = false
+            arenaRound = 0
+            arenaRoundsTotal = 0
+            return
+        }
+
+        guard isArenaActive else {
+            arenaRound = 0
+            arenaRoundsTotal = 0
+            return
+        }
+
+        if arenaRoundsTotal <= 0 {
+            arenaRoundsTotal = arenaRoundsForCurrentState()
+        }
+        arenaRound = min(max(1, arenaRound), arenaRoundsTotal)
+        prepareNextEncounterMonster()
     }
 
     func completeCurrentQuest() {
@@ -349,6 +557,7 @@ extension GameState {
     }
 
     func isActBossBattle() -> Bool {
+        guard !isArenaActive else { return false }
         guard currentActNumber > 0 else { return false }
         let isLastBattleOfQuest = completedBattlesInQuest + 1 >= battlesPerQuest
         let isLastQuestOfAct = questsCompletedInCurrentAct + 1 >= questsPerAct
@@ -356,6 +565,13 @@ extension GameState {
     }
 
     func prepareNextEncounterMonster() {
+        if isArenaActive {
+            currentMonsterType = arenaEncounterMonsterType()
+            let baseArenaName = MonsterNames.randomName(for: currentMonsterType)
+            currentMonster = "Arena \(romanNumeral(max(1, arenaRound))): \(baseArenaName)"
+            return
+        }
+
         let bossEncounter = isActBossBattle()
         currentMonsterType = determineMonsterTypeForNextEncounter(isActBossBattle: bossEncounter)
         currentMonster = MonsterNames.randomName(for: currentMonsterType)

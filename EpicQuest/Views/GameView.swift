@@ -84,6 +84,7 @@ struct GameView: View {
                                 InfoRow(label: "Race", value: game.character.race)
                                 InfoRow(label: "Class", value: game.character.characterClass)
                                 InfoRow(label: "Level", value: "\(game.level)")
+                                InfoRow(label: "Honor", value: "\(game.honorLevel)  [W: \(game.arenaWins) L: \(game.arenaLosses)]")
                                 InfoRow(label: "Gold", value: "\(game.gold)")
 
                                 Divider().overlay(Color.white.opacity(0.1))
