@@ -1,6 +1,18 @@
 import SwiftUI
 
+private enum RowLayout {
+    static let labelColumnWidth: CGFloat = 64
+    static let valueColumnWidth: CGFloat = 116
+    static let checkmarkColumnWidth: CGFloat = 12
+}
+
+private enum SectionPanelLayout {
+    static let headerSpacing: CGFloat = 4
+    static let contentPadding: CGFloat = 8
+}
+
 struct SectionPanel<Content: View>: View {
+
     let title: String
     let height: CGFloat?
     @ViewBuilder let content: Content
@@ -12,13 +24,15 @@ struct SectionPanel<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: SectionPanelLayout.headerSpacing) {
             Text(title)
                 .font(.caption)
                 .fontWeight(.semibold)
+                .frame(maxWidth: .infinity, alignment: .leading)
             GroupBox {
                 content
-                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(SectionPanelLayout.contentPadding)
             }
             .frame(maxWidth: .infinity)
             .frame(height: height)
@@ -34,6 +48,7 @@ struct ReadOnlyCheckRow: View {
         HStack(spacing: 4) {
             Image(systemName: isChecked ? "checkmark.square.fill" : "square")
                 .font(.caption2)
+                .frame(width: RowLayout.checkmarkColumnWidth, alignment: .leading)
                 .foregroundStyle(isChecked ? Color.accentColor : Color.secondary)
             Text(label)
                 .font(.caption)
@@ -72,11 +87,11 @@ struct InfoRow: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(label)
-                .frame(width: 60, alignment: .leading)
+                .frame(width: RowLayout.labelColumnWidth, alignment: .leading)
             Text(value)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .frame(width: 118, alignment: .leading)
+                .frame(width: RowLayout.valueColumnWidth, alignment: .leading)
             Spacer(minLength: 0)
         }
         .font(.caption)
@@ -104,10 +119,10 @@ struct StatTextRow: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(label)
-                .frame(width: 60, alignment: .leading)
+                .frame(width: RowLayout.labelColumnWidth, alignment: .leading)
             Text("\(value)")
                 .monospacedDigit()
-                .frame(width: 118, alignment: .leading)
+                .frame(width: RowLayout.valueColumnWidth, alignment: .leading)
             Spacer(minLength: 0)
         }
         .font(.caption)

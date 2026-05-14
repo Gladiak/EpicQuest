@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct ContentView: View {
     @State private var game = GameState()
@@ -19,6 +22,14 @@ struct ContentView: View {
         .onAppear {
             game.restoreIfPossible()
             game.startTimerIfNeeded()
+
+            #if os(macOS)
+            DispatchQueue.main.async {
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.windows.first?.makeKeyAndOrderFront(nil)
+            }
+            #endif
         }
         .onReceive(NotificationCenter.default.publisher(for: .progressQuestStartNewGame)) { _ in
             game.resetToNewCharacter()
