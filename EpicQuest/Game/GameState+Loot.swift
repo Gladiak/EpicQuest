@@ -23,24 +23,21 @@ extension GameState {
         actAttackBonus += starter.attackBonus
     }
 
-    func generateLoot(for monsterLevel: Int, forcedSlot: EquipmentSlot? = nil) -> LootItem {
+    func generateLoot(
+        for monsterLevel: Int,
+        forcedSlot: EquipmentSlot? = nil,
+        minimumQuality: Int? = nil,
+        preferredBaseName: String? = nil,
+        allowFlavorModifier: Bool = true,
+        qualityBias: Int = 0
+    ) -> LootItem {
         let slot = forcedSlot ?? EquipmentSlot.allCases.randomElement() ?? .weapon
 
-        let quality = randomQualityModifier(forAct: currentActNumber)
-        let qualityPrefix = qualityLabel(quality)
+        let rolledQuality = randomQualityModifier(forAct: currentActNumber) + qualityBias
+        let quality = min(30, max(rolledQuality, minimumQuality ?? rolledQuality))
 
-        let base = baseName(for: slot)
-        let namePrefix = namePrefix(forQuality: quality)
-        let epithet = nameEpithet(forQuality: quality)
-
-        let magicSuffix: String
-        if slot.isWeaponLike {
-            let suffixes = epicSuffixes(from: MagicAttributes.weapon, quality: quality)
-            magicSuffix = suffixes.joined(separator: " ")
-        } else {
-            let suffixes = epicSuffixes(from: MagicAttributes.armor, quality: quality)
-            magicSuffix = suffixes.joined(separator: " ")
-        }
+        let base = preferredBaseName ?? baseName(for: slot)
+        let flavorModifier = allowFlavorModifier ? singleNameModifier(for: slot, quality: quality) : ""
 
         let qualityPowerBoost = max(-3, quality / 3)
         let power = max(1, monsterLevel + Int.random(in: -2...4) + qualityPowerBoost)
@@ -54,13 +51,7 @@ extension GameState {
         let attackBonus = max(-2, attackRoll)
         let defenseBonus = max(-2, defenseRoll)
 
-        let composedCore = [qualityPrefix, namePrefix, base, epithet]
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-
-        let composedName = magicSuffix.isEmpty
-            ? composedCore
-            : "\(composedCore) \(magicSuffix)"
+        let composedName = composeItemName(base: base, quality: quality, flavorModifier: flavorModifier)
 
         return LootItem(
             name: composedName,
@@ -80,12 +71,6 @@ extension GameState {
             inventoryLoad += item.weight
             return
         }
-
-        if let equipped = equipment[item.slot] {
-            inventory.append(equipped)
-            inventoryLoad += equipped.weight
-        }
-
         equipItem(item)
     }
 
@@ -106,25 +91,26 @@ extension GameState {
     func runMerchantUpgradePhase() {
         let initialGold = gold
         var purchased = 0
+        var failedAttempts = 0
+        let maxFailedAttempts = max(10, EquipmentSlot.allCases.count * 5)
 
-        for slot in EquipmentSlot.allCases.shuffled() {
+        while gold > 0 && failedAttempts < maxFailedAttempts {
+            guard let slot = EquipmentSlot.allCases.randomElement() else { break }
             let candidate = generateMerchantUpgrade(for: slot)
-            guard shouldBuyMerchantItem(candidate) else { continue }
-            guard gold >= candidate.value else { continue }
+            guard shouldBuyMerchantItem(candidate) else {
+                failedAttempts += 1
+                continue
+            }
+            guard gold >= candidate.value else {
+                failedAttempts += 1
+                continue
+            }
 
             gold -= candidate.value
             purchased += 1
-
-            if let equipped = equipment[slot] {
-                inventory.append(equipped)
-                inventoryLoad += equipped.weight
-            }
+            failedAttempts = 0
 
             equipItem(candidate)
-
-            if purchased >= 3 {
-                break
-            }
         }
 
         if purchased == 0 {
@@ -138,7 +124,53 @@ extension GameState {
 
     func generateMerchantUpgrade(for slot: EquipmentSlot) -> LootItem {
         let merchantLevel = max(level + 2, level + currentActNumber)
-        return generateLoot(for: merchantLevel, forcedSlot: slot)
+        let equipped = equipment[slot]
+        let preferredBase = equipped.flatMap { canonicalBaseName(from: $0.name, slot: slot) }
+        let minimumQuality = equipped.map { $0.qualityModifier + 1 }
+
+        var candidate = generateLoot(
+            for: merchantLevel,
+            forcedSlot: slot,
+            minimumQuality: minimumQuality,
+            preferredBaseName: preferredBase,
+            allowFlavorModifier: false
+        )
+
+        if let equipped {
+            var rerolls = 0
+            while candidate.power <= equipped.power && rerolls < 6 {
+                candidate = generateLoot(
+                    for: merchantLevel + 1 + rerolls,
+                    forcedSlot: slot,
+                    minimumQuality: equipped.qualityModifier + 1,
+                    preferredBaseName: preferredBase,
+                    allowFlavorModifier: false
+                )
+                rerolls += 1
+            }
+
+            if candidate.power <= equipped.power {
+                let boostedPower = equipped.power + Int.random(in: 1...2)
+                let boostedQuality = max(candidate.qualityModifier, equipped.qualityModifier + 1)
+                let boostedName = composeItemName(
+                    base: preferredBase ?? baseName(for: slot),
+                    quality: boostedQuality,
+                    flavorModifier: ""
+                )
+                candidate = LootItem(
+                    name: boostedName,
+                    power: boostedPower,
+                    slot: candidate.slot,
+                    value: max(candidate.value, boostedPower * Int.random(in: 10...18)),
+                    weight: candidate.weight,
+                    attackBonus: max(candidate.attackBonus, equipped.attackBonus),
+                    defenseBonus: max(candidate.defenseBonus, equipped.defenseBonus),
+                    qualityModifier: boostedQuality
+                )
+            }
+        }
+
+        return candidate
     }
 
     func shouldBuyMerchantItem(_ candidate: LootItem) -> Bool {
@@ -152,12 +184,7 @@ extension GameState {
             return false
         }
 
-        let maxAffordableSpend = max(18, Int(Double(gold) * 0.7))
-        if candidate.value > maxAffordableSpend {
-            return false
-        }
-
-        return improvement >= 2 || candidate.power > equipped.power
+        return improvement >= 4 || candidate.power >= equipped.power + 2
     }
 
     func itemScore(_ item: LootItem) -> Int {
@@ -175,59 +202,79 @@ extension GameState {
         actDefenseBonus += item.defenseBonus
     }
 
+    func rebuildCombatBonusesFromEquipment() {
+        actAttackBonus = equipment.values.reduce(0) { $0 + $1.attackBonus }
+        actDefenseBonus = equipment.values.reduce(0) { $0 + $1.defenseBonus }
+    }
+
     func baseName(for slot: EquipmentSlot) -> String {
+        basePool(for: slot).randomElement() ?? "Simple Gear"
+    }
+
+    func basePool(for slot: EquipmentSlot) -> [String] {
         switch slot {
         case .weapon:
-            return EpicEquipmentNames.weaponBases.randomElement() ?? "Sharp Rock"
+            return EpicEquipmentNames.weaponBases
         case .shield:
-            return EpicEquipmentNames.shieldBases.randomElement() ?? "Wooden Lid"
+            return EpicEquipmentNames.shieldBases
         case .helm:
-            return EpicEquipmentNames.helmBases.randomElement() ?? "War Cap"
+            return EpicEquipmentNames.helmBases
         case .hauberk:
-            return EpicEquipmentNames.hauberkBases.randomElement() ?? "Burlap"
+            return EpicEquipmentNames.hauberkBases
         case .brassairts:
-            return EpicEquipmentNames.brassairtsBases.randomElement() ?? "Patchwork"
+            return EpicEquipmentNames.brassairtsBases
         case .vambraces:
-            return EpicEquipmentNames.vambracesBases.randomElement() ?? "Wrist Wraps"
+            return EpicEquipmentNames.vambracesBases
         case .gauntlets:
-            return EpicEquipmentNames.gauntletsBases.randomElement() ?? "Work Gloves"
+            return EpicEquipmentNames.gauntletsBases
         case .gambeson:
-            return EpicEquipmentNames.gambesonBases.randomElement() ?? "Quilt Coat"
+            return EpicEquipmentNames.gambesonBases
         case .cuisses:
-            return EpicEquipmentNames.cuissesBases.randomElement() ?? "Thigh Plates"
+            return EpicEquipmentNames.cuissesBases
         case .greaves:
-            return EpicEquipmentNames.greavesBases.randomElement() ?? "Shin Guards"
+            return EpicEquipmentNames.greavesBases
         case .solerets:
-            return EpicEquipmentNames.soleretsBases.randomElement() ?? "Solerets"
+            return EpicEquipmentNames.soleretsBases
         }
     }
 
-    func epicSuffixes(from pool: [String], quality: Int) -> [String] {
-        guard shouldApplyMythicSuffix(quality: quality) else { return [] }
+    func canonicalBaseName(from itemName: String, slot: EquipmentSlot) -> String? {
+        let candidates = basePool(for: slot).sorted { $0.count > $1.count }
+        for base in candidates where itemName.contains(base) {
+            return base
+        }
+        return nil
+    }
 
-        var count = 1
-        if quality >= 4, Int.random(in: 1...100) <= 35 { count += 1 }
-        if quality >= 8, Int.random(in: 1...100) <= 20 { count += 1 }
+    func composeItemName(base: String, quality: Int, flavorModifier: String) -> String {
+        let numericPrefix = qualityLabel(quality)
+        if flavorModifier.isEmpty {
+            return "\(numericPrefix) \(base)"
+        }
+        return "\(numericPrefix) \(base) \(flavorModifier)"
+    }
 
-        var selected: [String] = []
-        var remaining = pool
-        for _ in 0..<count {
-            guard !remaining.isEmpty else { break }
-            let index = Int.random(in: 0..<remaining.count)
-            selected.append(remaining.remove(at: index))
+    func singleNameModifier(for slot: EquipmentSlot, quality: Int) -> String {
+        let isQuestFinisher = completedBattlesInQuest + 1 >= battlesPerQuest
+        if shouldApplyMythicSuffix(quality: quality) {
+            if slot.isWeaponLike {
+                return MagicAttributes.weapon.randomElement() ?? ""
+            } else {
+                return MagicAttributes.armor.randomElement() ?? ""
+            }
         }
 
-        return selected
-    }
+        let prefixChance = min(20, 4 + currentActNumber * 2 + (isQuestFinisher ? 5 : 0))
+        if quality >= 0, Int.random(in: 1...100) <= prefixChance {
+            return EpicEquipmentNames.rarePrefixes.randomElement() ?? ""
+        }
 
-    func namePrefix(forQuality quality: Int) -> String {
-        guard quality >= -2 else { return "" }
-        return EpicEquipmentNames.rarePrefixes.randomElement() ?? ""
-    }
+        let epithetChance = min(10, 1 + currentActNumber)
+        if quality >= 4, isQuestFinisher, Int.random(in: 1...100) <= epithetChance {
+            return EpicEquipmentNames.epithets.randomElement() ?? ""
+        }
 
-    func nameEpithet(forQuality quality: Int) -> String {
-        guard quality >= 2, Int.random(in: 1...100) <= 40 else { return "" }
-        return EpicEquipmentNames.epithets.randomElement() ?? ""
+        return ""
     }
 
     func slotBonusBias(for slot: EquipmentSlot) -> (attack: Int, defense: Int) {

@@ -1,7 +1,22 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
+
+#if os(macOS)
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        true
+    }
+}
+#endif
 
 @main
 struct EpicQuestApp: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
+
     private let fixedSize = CGSize(width: 760, height: 760)
 
     var body: some Scene {

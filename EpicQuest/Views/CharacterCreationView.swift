@@ -12,7 +12,17 @@ struct CharacterCreationView: View {
             HStack(alignment: .top, spacing: 10) {
                 GroupBox("General") {
                     VStack(alignment: .leading, spacing: 8) {
-                        TextField("Name", text: $game.character.name)
+                        HStack(spacing: 6) {
+                            TextField("Name", text: $game.character.name)
+                            Button {
+                                game.rollCharacterName()
+                            } label: {
+                                Text("🎲")
+                            }
+                            .buttonStyle(.plain)
+                            .help("Randomize name")
+                            .accessibilityLabel("Randomize name")
+                        }
 
                         HStack(alignment: .top, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {

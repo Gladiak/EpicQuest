@@ -3,6 +3,7 @@ import SwiftUI
 private enum RowLayout {
     static let labelColumnWidth: CGFloat = 64
     static let valueColumnWidth: CGFloat = 116
+    static let statDetailColumnWidth: CGFloat = 180
     static let checkmarkColumnWidth: CGFloat = 12
 }
 
@@ -108,6 +109,30 @@ struct InfoRow: View {
     }
 }
 
+struct ResourceBarRow: View {
+    let label: String
+    let progress: Double
+    let value: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(label)
+                .frame(width: RowLayout.labelColumnWidth, alignment: .leading)
+            ProgressView(value: min(max(progress, 0), 1))
+                .tint(color)
+                .frame(maxWidth: .infinity)
+            Text(value)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .font(.caption)
+    }
+}
+
 struct StatRow: View {
     let label: String
     let value: Int
@@ -133,6 +158,24 @@ struct StatTextRow: View {
             Text("\(value)")
                 .monospacedDigit()
                 .frame(width: RowLayout.valueColumnWidth, alignment: .leading)
+            Spacer(minLength: 0)
+        }
+        .font(.caption)
+    }
+}
+
+struct StatDetailRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .frame(width: RowLayout.labelColumnWidth, alignment: .leading)
+            Text(value)
+                .font(.caption.monospacedDigit())
+                .lineLimit(1)
+                .frame(width: RowLayout.statDetailColumnWidth, alignment: .leading)
             Spacer(minLength: 0)
         }
         .font(.caption)

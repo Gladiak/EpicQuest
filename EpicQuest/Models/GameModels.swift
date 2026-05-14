@@ -41,6 +41,13 @@ enum GamePhase: String, Codable {
     case adventuring
 }
 
+enum MonsterType: String, Codable, CaseIterable {
+    case weak
+    case common
+    case elite
+    case apex
+}
+
 enum EquipmentSlot: String, CaseIterable, Codable {
     case weapon = "Weapon"
     case shield = "Shield"
@@ -94,7 +101,7 @@ struct LootItem: Identifiable, Codable {
 }
 
 struct CharacterData: Codable {
-    var name = "Uckvood"
+    var name = EpicCharacterNames.randomName()
     var race = GameData.races.first ?? "Half Orc"
     var characterClass = GameData.classes.first ?? "Ur-Paladin"
     var str = 4
@@ -133,6 +140,7 @@ struct GameSnapshot: Codable {
     let level: Int
     let gold: Int
     let hpMax: Int
+    let currentHP: Double
     let mpMax: Int
     let currentMP: Double
     let experience: Int
@@ -146,6 +154,7 @@ struct GameSnapshot: Codable {
     let battlesPerQuest: Int
     let completedBattlesInQuest: Int
     let currentMonster: String
+    let currentMonsterType: MonsterType
     let battleProgress: Double
     let equipment: [EquipmentSlot: LootItem]
     let inventory: [LootItem]
@@ -156,6 +165,150 @@ struct GameSnapshot: Codable {
     let isSellingInTown: Bool
     let isReturningToTown: Bool
     let returnToTownTicksRemaining: Int
+    let baseStr: Int
+    let baseCon: Int
+    let baseDex: Int
+    let baseInt: Int
+    let baseWis: Int
+    let baseCha: Int
     let actAttackBonus: Int
     let actDefenseBonus: Int
+
+    enum CodingKeys: String, CodingKey {
+        case phase, character, level, gold, hpMax, currentHP, mpMax, currentMP
+        case experience, experienceToNextLevel
+        case currentActNumber, completedActs, questsCompletedInCurrentAct, questsPerAct
+        case completedQuestNames, currentQuest, battlesPerQuest, completedBattlesInQuest
+        case currentMonster, currentMonsterType, battleProgress
+        case equipment, inventory, inventoryCapacity, inventoryLoad
+        case knownSpells, logLine, isSellingInTown, isReturningToTown, returnToTownTicksRemaining
+        case baseStr, baseCon, baseDex, baseInt, baseWis, baseCha
+        case actAttackBonus, actDefenseBonus
+    }
+
+    init(
+        phase: GamePhase,
+        character: CharacterData,
+        level: Int,
+        gold: Int,
+        hpMax: Int,
+        currentHP: Double,
+        mpMax: Int,
+        currentMP: Double,
+        experience: Int,
+        experienceToNextLevel: Int,
+        currentActNumber: Int,
+        completedActs: [String],
+        questsCompletedInCurrentAct: Int,
+        questsPerAct: Int,
+        completedQuestNames: [String],
+        currentQuest: String,
+        battlesPerQuest: Int,
+        completedBattlesInQuest: Int,
+        currentMonster: String,
+        currentMonsterType: MonsterType,
+        battleProgress: Double,
+        equipment: [EquipmentSlot: LootItem],
+        inventory: [LootItem],
+        inventoryCapacity: Double,
+        inventoryLoad: Double,
+        knownSpells: [SpellEntry],
+        logLine: String,
+        isSellingInTown: Bool,
+        isReturningToTown: Bool,
+        returnToTownTicksRemaining: Int,
+        baseStr: Int,
+        baseCon: Int,
+        baseDex: Int,
+        baseInt: Int,
+        baseWis: Int,
+        baseCha: Int,
+        actAttackBonus: Int,
+        actDefenseBonus: Int
+    ) {
+        self.phase = phase
+        self.character = character
+        self.level = level
+        self.gold = gold
+        self.hpMax = hpMax
+        self.currentHP = currentHP
+        self.mpMax = mpMax
+        self.currentMP = currentMP
+        self.experience = experience
+        self.experienceToNextLevel = experienceToNextLevel
+        self.currentActNumber = currentActNumber
+        self.completedActs = completedActs
+        self.questsCompletedInCurrentAct = questsCompletedInCurrentAct
+        self.questsPerAct = questsPerAct
+        self.completedQuestNames = completedQuestNames
+        self.currentQuest = currentQuest
+        self.battlesPerQuest = battlesPerQuest
+        self.completedBattlesInQuest = completedBattlesInQuest
+        self.currentMonster = currentMonster
+        self.currentMonsterType = currentMonsterType
+        self.battleProgress = battleProgress
+        self.equipment = equipment
+        self.inventory = inventory
+        self.inventoryCapacity = inventoryCapacity
+        self.inventoryLoad = inventoryLoad
+        self.knownSpells = knownSpells
+        self.logLine = logLine
+        self.isSellingInTown = isSellingInTown
+        self.isReturningToTown = isReturningToTown
+        self.returnToTownTicksRemaining = returnToTownTicksRemaining
+        self.baseStr = baseStr
+        self.baseCon = baseCon
+        self.baseDex = baseDex
+        self.baseInt = baseInt
+        self.baseWis = baseWis
+        self.baseCha = baseCha
+        self.actAttackBonus = actAttackBonus
+        self.actDefenseBonus = actDefenseBonus
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        phase = try c.decode(GamePhase.self, forKey: .phase)
+        character = try c.decode(CharacterData.self, forKey: .character)
+        level = try c.decode(Int.self, forKey: .level)
+        gold = try c.decode(Int.self, forKey: .gold)
+        hpMax = try c.decode(Int.self, forKey: .hpMax)
+        currentHP = try c.decodeIfPresent(Double.self, forKey: .currentHP) ?? Double(hpMax)
+        mpMax = try c.decode(Int.self, forKey: .mpMax)
+        currentMP = try c.decode(Double.self, forKey: .currentMP)
+        experience = try c.decode(Int.self, forKey: .experience)
+        experienceToNextLevel = try c.decode(Int.self, forKey: .experienceToNextLevel)
+        currentActNumber = try c.decode(Int.self, forKey: .currentActNumber)
+        completedActs = try c.decode([String].self, forKey: .completedActs)
+        questsCompletedInCurrentAct = try c.decode(Int.self, forKey: .questsCompletedInCurrentAct)
+        questsPerAct = try c.decode(Int.self, forKey: .questsPerAct)
+        completedQuestNames = try c.decode([String].self, forKey: .completedQuestNames)
+        currentQuest = try c.decode(String.self, forKey: .currentQuest)
+        battlesPerQuest = try c.decode(Int.self, forKey: .battlesPerQuest)
+        completedBattlesInQuest = try c.decode(Int.self, forKey: .completedBattlesInQuest)
+        currentMonster = try c.decode(String.self, forKey: .currentMonster)
+        currentMonsterType = try c.decodeIfPresent(MonsterType.self, forKey: .currentMonsterType)
+            ?? MonsterNames.legacyType(for: currentMonster)
+        battleProgress = try c.decode(Double.self, forKey: .battleProgress)
+        equipment = try c.decode([EquipmentSlot: LootItem].self, forKey: .equipment)
+        inventory = try c.decode([LootItem].self, forKey: .inventory)
+        inventoryCapacity = try c.decode(Double.self, forKey: .inventoryCapacity)
+        inventoryLoad = try c.decode(Double.self, forKey: .inventoryLoad)
+        knownSpells = try c.decode([SpellEntry].self, forKey: .knownSpells)
+        logLine = try c.decode(String.self, forKey: .logLine)
+        isSellingInTown = try c.decode(Bool.self, forKey: .isSellingInTown)
+        isReturningToTown = try c.decode(Bool.self, forKey: .isReturningToTown)
+        returnToTownTicksRemaining = try c.decode(Int.self, forKey: .returnToTownTicksRemaining)
+
+        baseStr = try c.decodeIfPresent(Int.self, forKey: .baseStr) ?? character.str
+        baseCon = try c.decodeIfPresent(Int.self, forKey: .baseCon) ?? character.con
+        baseDex = try c.decodeIfPresent(Int.self, forKey: .baseDex) ?? character.dex
+        baseInt = try c.decodeIfPresent(Int.self, forKey: .baseInt) ?? character.int
+        baseWis = try c.decodeIfPresent(Int.self, forKey: .baseWis) ?? character.wis
+        baseCha = try c.decodeIfPresent(Int.self, forKey: .baseCha) ?? character.cha
+
+        actAttackBonus = try c.decode(Int.self, forKey: .actAttackBonus)
+        actDefenseBonus = try c.decode(Int.self, forKey: .actDefenseBonus)
+    }
 }

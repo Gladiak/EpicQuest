@@ -10,6 +10,8 @@ EpicQuest is an idle/comedy RPG built with SwiftUI for macOS, inspired by the cl
 - Inventory load management with return-to-town phase, auto-selling, and merchant upgrades.
 - Spell Book with rare end-of-act boss scroll drops, spell levels, and MP costs.
 - MP regeneration over time and spell usage that increases kill rate.
+- Progression tuning constants centralized for easier balancing iterations.
+- Combat vitality loop: HP loss per battle, emergency retreat at critical HP, and full town recovery.
 - Automatic save/restore of full game state.
 
 ## Tech Stack
@@ -73,7 +75,6 @@ Active development. The core gameplay loop is already playable and includes:
 - Class talent tree or passive specialization.
 - More random events and act content.
 - Additional UI polish and richer visual feedback.
-- Metrics/debug panel for gameplay tuning.
 
 ## License
 

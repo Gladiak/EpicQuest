@@ -5,6 +5,11 @@ import AppKit
 
 struct ContentView: View {
     @State private var game = GameState()
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var isRunningPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
 
     var body: some View {
         ZStack {
@@ -20,6 +25,8 @@ struct ContentView: View {
         .frame(width: UIConstants.windowSize, height: UIConstants.windowSize)
         .navigationTitle("EpicQuest - \(game.character.name)")
         .onAppear {
+            guard !isRunningPreview else { return }
+
             game.restoreIfPossible()
             game.startTimerIfNeeded()
 
@@ -33,6 +40,11 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .progressQuestStartNewGame)) { _ in
             game.resetToNewCharacter()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .inactive || newPhase == .background {
+                game.saveCurrentGame()
+            }
         }
     }
 }
