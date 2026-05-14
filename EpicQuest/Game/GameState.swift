@@ -35,6 +35,8 @@ final class GameState {
 
     var logLine = "Roll your stats and start."
     var isSellingInTown = false
+    var isReturningToTown = false
+    var returnToTownTicksRemaining = 0
     var actAttackBonus = 0
     var actDefenseBonus = 0
 
@@ -153,6 +155,8 @@ final class GameState {
 
         logLine = "Roll your stats and start."
         isSellingInTown = false
+        isReturningToTown = false
+        returnToTownTicksRemaining = 0
         statRollHistory.removeAll()
         actAttackBonus = 0
         actDefenseBonus = 0
@@ -215,6 +219,8 @@ final class GameState {
         knownSpells.removeAll()
 
         isSellingInTown = false
+        isReturningToTown = false
+        returnToTownTicksRemaining = 0
         battleProgress = 0
         logLine = "Starting Prologue."
         statRollHistory.removeAll()
@@ -228,6 +234,19 @@ final class GameState {
         guard phase == .adventuring else { return }
 
         regenerateMP()
+
+        if isReturningToTown {
+            returnToTownTicksRemaining = max(0, returnToTownTicksRemaining - 1)
+            if returnToTownTicksRemaining == 0 {
+                isReturningToTown = false
+                isSellingInTown = true
+                logLine = "Reached town. Selling loot..."
+            } else {
+                logLine = "Returning to town..."
+            }
+            saveCurrentGame()
+            return
+        }
 
         if isSellingInTown {
             sellStep()
@@ -246,8 +265,10 @@ final class GameState {
         resolveBattle()
 
         if inventoryProgress >= 1 {
-            isSellingInTown = true
-            logLine = "Backpack full. Returning to town to sell loot."
+            isReturningToTown = true
+            returnToTownTicksRemaining = 8
+            isSellingInTown = false
+            logLine = "Backpack full. Returning to town..."
         }
 
         saveCurrentGame()

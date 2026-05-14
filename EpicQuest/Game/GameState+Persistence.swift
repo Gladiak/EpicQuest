@@ -29,6 +29,8 @@ extension GameState {
             knownSpells: knownSpells,
             logLine: logLine,
             isSellingInTown: isSellingInTown,
+            isReturningToTown: isReturningToTown,
+            returnToTownTicksRemaining: returnToTownTicksRemaining,
             actAttackBonus: actAttackBonus,
             actDefenseBonus: actDefenseBonus
         )
@@ -61,6 +63,8 @@ extension GameState {
         knownSpells = snapshot.knownSpells
         logLine = snapshot.logLine
         isSellingInTown = snapshot.isSellingInTown
+        isReturningToTown = snapshot.isReturningToTown
+        returnToTownTicksRemaining = max(0, snapshot.returnToTownTicksRemaining)
         actAttackBonus = snapshot.actAttackBonus
         actDefenseBonus = snapshot.actDefenseBonus
     }

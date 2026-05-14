@@ -154,6 +154,8 @@ struct GameSnapshot: Codable {
     let knownSpells: [SpellEntry]
     let logLine: String
     let isSellingInTown: Bool
+    let isReturningToTown: Bool
+    let returnToTownTicksRemaining: Int
     let actAttackBonus: Int
     let actDefenseBonus: Int
 }
