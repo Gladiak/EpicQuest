@@ -55,7 +55,13 @@ extension GameState {
             baseWis: baseWis,
             baseCha: baseCha,
             actAttackBonus: actAttackBonus,
-            actDefenseBonus: actDefenseBonus
+            actDefenseBonus: actDefenseBonus,
+            townProjects: Dictionary(uniqueKeysWithValues: townProjects.map { ($0.key.rawValue, $0.value) }),
+            activeTownProject: activeTownProject.rawValue,
+            townProjectLogLine: townProjectLogLine,
+            townProjectInvestmentThisVisit: townProjectInvestmentThisVisit,
+            townRetreatCriticalCount: townRetreatCriticalCount,
+            townRetreatInventoryCount: townRetreatInventoryCount
         )
     }
 
@@ -107,6 +113,18 @@ extension GameState {
         baseCha = snapshot.baseCha
         actAttackBonus = snapshot.actAttackBonus
         actDefenseBonus = snapshot.actDefenseBonus
+        townProjects.removeAll()
+        for (rawType, state) in snapshot.townProjects {
+            if let type = TownProjectType(rawValue: rawType) {
+                townProjects[type] = state
+            }
+        }
+        activeTownProject = TownProjectType(rawValue: snapshot.activeTownProject) ?? .forgeDistrict
+        townProjectLogLine = snapshot.townProjectLogLine
+        townProjectInvestmentThisVisit = max(0, snapshot.townProjectInvestmentThisVisit)
+        townRetreatCriticalCount = max(0, snapshot.townRetreatCriticalCount)
+        townRetreatInventoryCount = max(0, snapshot.townRetreatInventoryCount)
+        initializeTownProjects()
         synchronizeHonorMilestonesWithCurrentHonor()
         sanitizeArenaStateAfterLoad()
         rebuildCombatBonusesFromEquipment()

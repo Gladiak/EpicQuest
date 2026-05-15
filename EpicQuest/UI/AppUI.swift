@@ -1,8 +1,8 @@
 import SwiftUI
 
 enum UIConstants {
-    static let windowWidth: CGFloat = 950
-    static let windowHeight: CGFloat = 920
+    static let windowWidth: CGFloat = 920
+    static let windowHeight: CGFloat = 890
 }
 
 enum LiquidGlassPalette {

@@ -86,6 +86,26 @@ enum ArenaLeague: String, Codable, CaseIterable {
     }
 }
 
+enum TownProjectType: String, Codable, CaseIterable {
+    case forgeDistrict = "Forge District"
+    case arcaneAcademy = "Arcane Academy"
+    case caravanGuild = "Caravan Guild"
+    case fortifiedWalls = "Fortified Walls"
+
+    var shortLabel: String {
+        switch self {
+        case .forgeDistrict:
+            return "Forge"
+        case .arcaneAcademy:
+            return "Academy"
+        case .caravanGuild:
+            return "Caravan"
+        case .fortifiedWalls:
+            return "Walls"
+        }
+    }
+}
+
 enum EquipmentSlot: String, CaseIterable, Codable {
     case weapon = "Weapon"
     case shield = "Shield"
@@ -172,6 +192,28 @@ struct SpellEntry: Identifiable, Codable {
     }
 }
 
+struct TownProjectState: Codable {
+    var type: TownProjectType
+    var level: Int
+    var progress: Int
+    var required: Int
+    var lastCompletedAtLevel: Int
+
+    init(
+        type: TownProjectType,
+        level: Int = 0,
+        progress: Int = 0,
+        required: Int = 120,
+        lastCompletedAtLevel: Int = 0
+    ) {
+        self.type = type
+        self.level = max(0, level)
+        self.progress = max(0, progress)
+        self.required = max(30, required)
+        self.lastCompletedAtLevel = max(0, lastCompletedAtLevel)
+    }
+}
+
 struct GameSnapshot: Codable {
     let phase: GamePhase
     let character: CharacterData
@@ -220,6 +262,12 @@ struct GameSnapshot: Codable {
     let baseCha: Int
     let actAttackBonus: Int
     let actDefenseBonus: Int
+    let townProjects: [String: TownProjectState]
+    let activeTownProject: String
+    let townProjectLogLine: String
+    let townProjectInvestmentThisVisit: Int
+    let townRetreatCriticalCount: Int
+    let townRetreatInventoryCount: Int
 
     enum CodingKeys: String, CodingKey {
         case phase, character, level, honorLevel, honorMilestonesEarned, gold, hpMax, currentHP, mpMax, currentMP
@@ -233,6 +281,8 @@ struct GameSnapshot: Codable {
         case knownSpells, logLine, isSellingInTown, isReturningToTown, returnToTownTicksRemaining
         case baseStr, baseCon, baseDex, baseInt, baseWis, baseCha
         case actAttackBonus, actDefenseBonus
+        case townProjects, activeTownProject, townProjectLogLine, townProjectInvestmentThisVisit
+        case townRetreatCriticalCount, townRetreatInventoryCount
     }
 
     init(
@@ -282,7 +332,13 @@ struct GameSnapshot: Codable {
         baseWis: Int,
         baseCha: Int,
         actAttackBonus: Int,
-        actDefenseBonus: Int
+        actDefenseBonus: Int,
+        townProjects: [String: TownProjectState],
+        activeTownProject: String,
+        townProjectLogLine: String,
+        townProjectInvestmentThisVisit: Int,
+        townRetreatCriticalCount: Int,
+        townRetreatInventoryCount: Int
     ) {
         self.phase = phase
         self.character = character
@@ -331,6 +387,12 @@ struct GameSnapshot: Codable {
         self.baseCha = baseCha
         self.actAttackBonus = actAttackBonus
         self.actDefenseBonus = actDefenseBonus
+        self.townProjects = townProjects
+        self.activeTownProject = activeTownProject
+        self.townProjectLogLine = townProjectLogLine
+        self.townProjectInvestmentThisVisit = townProjectInvestmentThisVisit
+        self.townRetreatCriticalCount = townRetreatCriticalCount
+        self.townRetreatInventoryCount = townRetreatInventoryCount
     }
 
     init(from decoder: Decoder) throws {
@@ -386,5 +448,12 @@ struct GameSnapshot: Codable {
 
         actAttackBonus = try c.decode(Int.self, forKey: .actAttackBonus)
         actDefenseBonus = try c.decode(Int.self, forKey: .actDefenseBonus)
+
+        townProjects = try c.decodeIfPresent([String: TownProjectState].self, forKey: .townProjects) ?? [:]
+        activeTownProject = try c.decodeIfPresent(String.self, forKey: .activeTownProject) ?? TownProjectType.forgeDistrict.rawValue
+        townProjectLogLine = try c.decodeIfPresent(String.self, forKey: .townProjectLogLine) ?? "No projects funded yet."
+        townProjectInvestmentThisVisit = max(0, try c.decodeIfPresent(Int.self, forKey: .townProjectInvestmentThisVisit) ?? 0)
+        townRetreatCriticalCount = max(0, try c.decodeIfPresent(Int.self, forKey: .townRetreatCriticalCount) ?? 0)
+        townRetreatInventoryCount = max(0, try c.decodeIfPresent(Int.self, forKey: .townRetreatInventoryCount) ?? 0)
     }
 }

@@ -53,6 +53,12 @@ final class GameState {
     var inventoryCapacity = 10.0
     var inventoryLoad = 0.0
     var knownSpells: [SpellEntry] = []
+    var townProjects: [TownProjectType: TownProjectState] = [:]
+    var activeTownProject: TownProjectType = .forgeDistrict
+    var townProjectLogLine = "No projects funded yet."
+    var townProjectInvestmentThisVisit = 0
+    var townRetreatCriticalCount = 0
+    var townRetreatInventoryCount = 0
 
     var logLine = "Roll your stats and start."
     var isSellingInTown = false
@@ -74,7 +80,11 @@ final class GameState {
     }
 
     var inventoryProgress: Double {
-        clampedProgress(inventoryLoad / max(inventoryCapacity, 1))
+        clampedProgress(inventoryLoad / max(effectiveInventoryCapacity, 1))
+    }
+
+    var effectiveInventoryCapacity: Double {
+        max(1, inventoryCapacity + townProjectInventoryCapacityBonus())
     }
 
     var battleProgressValue: Double {
@@ -142,7 +152,7 @@ final class GameState {
     }
 
     var questItems: [ReadOnlyCheckItem] {
-        var items = completedQuestNames.suffix(5).map { ReadOnlyCheckItem(title: $0, isCompleted: true) }
+        var items = completedQuestNames.map { ReadOnlyCheckItem(title: $0, isCompleted: true) }
         items.append(ReadOnlyCheckItem(title: currentQuest, isCompleted: false))
         return items
     }
@@ -230,6 +240,12 @@ final class GameState {
         inventoryCapacity = 10
         inventoryLoad = 0
         knownSpells.removeAll()
+        townProjects.removeAll()
+        activeTownProject = .forgeDistrict
+        townProjectLogLine = "No projects funded yet."
+        townProjectInvestmentThisVisit = 0
+        townRetreatCriticalCount = 0
+        townRetreatInventoryCount = 0
 
         logLine = "Roll your stats and start."
         isSellingInTown = false
@@ -239,6 +255,7 @@ final class GameState {
         actAttackBonus = 0
         actDefenseBonus = 0
         captureBaseStatsFromCurrentCharacter()
+        initializeTownProjects()
 
         deleteSave()
     }
@@ -330,6 +347,12 @@ final class GameState {
         inventoryLoad = 0
         inventoryCapacity = 10
         knownSpells.removeAll()
+        townProjects.removeAll()
+        activeTownProject = .forgeDistrict
+        townProjectLogLine = "No projects funded yet."
+        townProjectInvestmentThisVisit = 0
+        townRetreatCriticalCount = 0
+        townRetreatInventoryCount = 0
 
         isSellingInTown = false
         isReturningToTown = false
@@ -340,6 +363,7 @@ final class GameState {
 
         resetActBonuses()
         captureBaseStatsFromCurrentCharacter()
+        initializeTownProjects()
         seedInitialEquipment()
         saveCurrentGame()
     }
@@ -385,7 +409,8 @@ final class GameState {
         }
 
         castBestSpellIfPossible()
-        battleProgress += battleTickStep
+        let stepMultiplier = isArenaActive ? arenaModifierBattleStepMultiplier() : 1.0
+        battleProgress += battleTickStep * stepMultiplier
         if battleProgress < BalanceTuning.battleProgressTarget {
             if shouldSave {
                 saveCurrentGame()
@@ -398,6 +423,7 @@ final class GameState {
 
         if currentHP <= 1 {
             var retreatReason = "Critically wounded. Retreating to town..."
+            townRetreatCriticalCount += 1
             if isArenaActive {
                 let arenaLossSummary = forfeitArenaRun()
                 if !arenaLossSummary.isEmpty {
@@ -406,6 +432,7 @@ final class GameState {
             }
             startReturningToTown(reason: retreatReason, travelTicks: 1)
         } else if !isArenaActive && inventoryProgress >= 1 {
+            townRetreatInventoryCount += 1
             startReturningToTown(reason: "Backpack full. Returning to town...", travelTicks: 8)
         }
 
@@ -460,7 +487,8 @@ final class GameState {
     func startReturningToTown(reason: String, travelTicks: Int) {
         guard !isReturningToTown && !isSellingInTown else { return }
         isReturningToTown = true
-        returnToTownTicksRemaining = max(1, travelTicks)
+        let reduction = townProjectTravelTickReduction()
+        returnToTownTicksRemaining = max(1, travelTicks - reduction)
         isSellingInTown = false
         logLine = reason
     }

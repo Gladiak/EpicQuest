@@ -1,84 +1,88 @@
-# EpicQuest
+# EpicQuest ⚔️🤣
 
-EpicQuest is an idle/comedy RPG built with SwiftUI for macOS, inspired by the classic Progress Quest tone: your character advances automatically through quests, battles, loot, town selling, upgrades, and long-term progression.
+Benvenuto in **EpicQuest**, l'idle RPG per macOS dove il tuo eroe lavora mentre tu ti godi lo spettacolo.  
+Ispirazione: vibes da *Progress Quest*.  
+Risultato: botte, loot, magie, arena, upgrade e una quantità sana di caos controllato. 🍻
 
-## Highlights
+## Perché è una droga (buona) 🎯
 
-- Character creation with race, class, and stat roll/unroll.
-- Character sheet avatar generated from race/class.
-- Automatic progression through acts, quests, and battles.
-- Automatic Arena runs every few encounters with escalating rounds and bonus rewards.
-- Multi-slot equipment loot system with quality, bonuses, and procedural naming.
-- Inventory load management with return-to-town phase, auto-selling, and merchant upgrades.
-- Honor progression: Arena success increases Honor, unlocks merchant-quality boosts, and grants small permanent stat growth milestones.
-- Spell Book with rare end-of-act boss scroll drops, spell levels, and MP costs.
-- MP regeneration over time and spell usage that increases kill rate.
-- Progression tuning constants centralized for easier balancing iterations.
-- Combat vitality loop: HP loss per battle, emergency retreat at critical HP, and full town recovery.
-- Automatic save/restore of full game state.
+- Crei il personaggio con razza, classe e roll/unroll delle stats.
+- Avatar della scheda personaggio generato in base a razza/classe.
+- Progressione automatica tra atti, quest e combattimenti.
+- Arena automatica ogni tot incontri con round sempre più tosti e ricompense più golose.
+- Modificatori Arena dinamici: ogni run può cambiare le regole per alzare il pepe (e il premio).
+- Progetti della città automatici: l'oro in surplus viene investito in upgrade permanenti.
+- Loot equip multi-slot con qualità, bonus e naming procedurale.
+- Inventario intelligente: pieno -> ritorno in città -> auto-vendita -> upgrade -> ripartenza.
+- Progressione Honor: più domini l'arena, più sblocchi bonus e mini-crescita permanente delle stats.
+- Spell Book con pergamene rare dai boss di fine atto, livelli magia e costo MP.
+- Rigenerazione MP nel tempo + magie che accelerano la velocità di kill.
+- Costanti di bilanciamento centralizzate per tweak rapidi e puliti.
+- Loop vitalità: perdi HP in battaglia, ritirata d'emergenza a HP critici, recupero completo in città.
+- Salvataggio/ripristino automatico dello stato completo. Sempre. 🛟
 
-## Tech Stack
+## Stack Tecnologico 🛠️
 
 - Swift
 - SwiftUI
-- macOS app target (Xcode)
+- Target macOS (Xcode)
 
-## Project Structure
+## Struttura Progetto 🗂️
 
 ```text
 EpicQuest/
 ├─ EpicQuest/
-│  ├─ Game/                  # State, progression, loot, persistence logic
-│  ├─ GameData/              # Name pools (quests, monsters, equipment, spells, attributes)
-│  ├─ Models/                # Domain models and save snapshots
-│  ├─ Views/                 # SwiftUI UI (character creation + game screen)
-│  ├─ UI/                    # UI constants/helpers
-│  ├─ Assets.xcassets/       # Asset catalog (icons, colors)
+│  ├─ Game/                  # Logica di stato, progressione, loot, persistenza
+│  ├─ GameData/              # Pool nomi (quest, mostri, equip, spell, attributi)
+│  ├─ Models/                # Modelli dominio e snapshot di salvataggio
+│  ├─ Views/                 # UI SwiftUI (creazione personaggio + schermata di gioco)
+│  ├─ UI/                    # Costanti/helper di presentazione
+│  ├─ Assets.xcassets/       # Catalogo asset (icone, colori)
 │  ├─ ContentView.swift
 │  └─ EpicQuestApp.swift
 └─ Products/
 ```
 
-## Gameplay Loop
+## Loop di Gioco (aka "si parte e non ci si ferma") 🔁
 
-1. Create a character (race + class).
-2. Roll stats and start the adventure.
-3. Fight automatically and complete quests/acts.
-4. Gain loot, auto-equip upgrades, or store items in inventory.
-5. When inventory is full:
-   - return to town,
-   - auto-sell loot,
-   - buy merchant upgrades,
-   - resume adventure.
-6. End-of-act bosses: low chance to drop spell scrolls (scales with act/level).
+1. Crea il personaggio (razza + classe).
+2. Rerolla le stats finché il destino ti sorride.
+3. Parti all'avventura: combattimenti e quest in automatico.
+4. Raccogli loot, auto-equip del meglio e stiva il resto.
+5. Inventario pieno? Si torna in città:
+   - auto-vendita,
+   - acquisto upgrade mercante,
+   - autofinanziamento progetti cittadini,
+   - ritorno immediato all'avventura.
+6. Boss di fine atto: bassa chance di drop pergamene magia (scala con atto/livello).
 
-## Requirements
+## Requisiti 📦
 
 - macOS
-- Recent Xcode version with SwiftUI support
+- Versione recente di Xcode con supporto SwiftUI
 
-## Run Locally
+## Avvio Locale 🚀
 
-1. Open the project in Xcode.
-2. Select the `EpicQuest` scheme.
-3. Build & Run (`⌘R`).
+1. Apri il progetto in Xcode.
+2. Seleziona lo scheme `EpicQuest`.
+3. Build & Run (`⌘R`) e lascia che il grind faccia il suo sporco lavoro.
 
-## Project Status
+## Stato Progetto 🧪
 
-Active development. The core gameplay loop is already playable and includes:
+Sviluppo attivo. Il core loop è già giocabile e include:
 
-- automatic progression,
-- economy loop (loot/sell/buy),
-- spell progression,
-- persistent saves.
+- progressione automatica,
+- economia (loot/vendi/compra),
+- progressione magie,
+- salvataggi persistenti.
 
-## Roadmap (Ideas)
+## Roadmap (Idee Folli ma Buone) 🧠
 
-- Advanced balancing for XP/loot/drop curves.
-- Class talent tree or passive specialization.
-- More random events and act content.
-- Additional UI polish and richer visual feedback.
+- Bilanciamento avanzato di curve XP/loot/drop.
+- Talent tree di classe o specializzazioni passive.
+- Eventi random aggiuntivi e più contenuti per atto.
+- Maggiore polish UI e feedback visivo ancora più appagante.
 
-## License
+## License 📜
 
-Add your preferred license here (for example MIT) before publishing.
+Aggiungi la licenza che preferisci (esempio: MIT) prima della pubblicazione.

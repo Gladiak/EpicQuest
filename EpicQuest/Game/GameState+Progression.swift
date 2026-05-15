@@ -106,6 +106,184 @@ enum BalanceTuning {
     static let bossEncounterLevelBonus = 2
     static let spellImpactScale = 0.0045
     static let maxSpellImpact = 0.28
+
+    static let townProjectBaseRequired = 120
+    static let townProjectRequiredGrowth = 1.42
+    static let townProjectRequiredFlatGain = 25
+    static let townProjectBudgetShare = 0.32
+    static let townProjectMinimumInvestment = 30
+    static let townProjectForgeMerchantQualityPerLevel = 1
+    static let townProjectForgeMerchantQualityCap = 12
+    static let townProjectForgeMerchantPowerPerTwoLevels = 2
+    static let townProjectForgeMerchantPowerCap = 6
+    static let townProjectArcaneRegenPerLevel = 0.02
+    static let townProjectArcaneRegenCap = 0.3
+    static let townProjectArcaneDropChancePerLevel = 1
+    static let townProjectArcaneDropChanceCap = 15
+    static let townProjectCaravanCapacityPerLevel = 0.4
+    static let townProjectCaravanCapacityCap = 22.0
+    static let townProjectCaravanTravelTickReductionPerTwoLevels = 2
+    static let townProjectCaravanTravelTickReductionCap = 4
+    static let townProjectWallsMitigationPerLevel = 1
+    static let townProjectWallsMitigationCap = 8
+}
+
+enum ArenaModifier: String, CaseIterable {
+    case bloodsportContract
+    case arcaneDrought
+    case ironWard
+    case executionersCrowd
+    case suddenDeath
+    case cursedTempo
+
+    var shortName: String {
+        switch self {
+        case .bloodsportContract:
+            return "Bloodsport"
+        case .arcaneDrought:
+            return "Arcane Drought"
+        case .ironWard:
+            return "Iron Ward"
+        case .executionersCrowd:
+            return "Executioner's Crowd"
+        case .suddenDeath:
+            return "Sudden Death"
+        case .cursedTempo:
+            return "Cursed Tempo"
+        }
+    }
+
+    var monsterLevelBonus: Int {
+        switch self {
+        case .bloodsportContract: return 2
+        case .arcaneDrought: return 1
+        case .ironWard: return 1
+        case .executionersCrowd: return 2
+        case .suddenDeath: return 3
+        case .cursedTempo: return 1
+        }
+    }
+
+    var incomingDamageLevelBonus: Int {
+        switch self {
+        case .bloodsportContract: return 1
+        case .arcaneDrought: return 1
+        case .ironWard: return 1
+        case .executionersCrowd: return 2
+        case .suddenDeath: return 3
+        case .cursedTempo: return 1
+        }
+    }
+
+    var battleStepMultiplier: Double {
+        switch self {
+        case .bloodsportContract: return 0.92
+        case .arcaneDrought: return 0.9
+        case .ironWard: return 0.8
+        case .executionersCrowd: return 0.86
+        case .suddenDeath: return 0.82
+        case .cursedTempo: return 0.88
+        }
+    }
+
+    var mpRegenMultiplier: Double {
+        switch self {
+        case .bloodsportContract: return 0.9
+        case .arcaneDrought: return 0.42
+        case .ironWard: return 0.78
+        case .executionersCrowd: return 0.8
+        case .suddenDeath: return 0.65
+        case .cursedTempo: return 0.58
+        }
+    }
+
+    var spellCastChanceDelta: Int {
+        switch self {
+        case .bloodsportContract: return -4
+        case .arcaneDrought: return -18
+        case .ironWard: return -10
+        case .executionersCrowd: return -8
+        case .suddenDeath: return -12
+        case .cursedTempo: return -14
+        }
+    }
+
+    var spellImpactMultiplier: Double {
+        switch self {
+        case .bloodsportContract: return 0.95
+        case .arcaneDrought: return 0.74
+        case .ironWard: return 0.9
+        case .executionersCrowd: return 0.88
+        case .suddenDeath: return 0.82
+        case .cursedTempo: return 0.86
+        }
+    }
+
+    var rewardMultiplier: Double {
+        switch self {
+        case .bloodsportContract: return 1.2
+        case .arcaneDrought: return 1.24
+        case .ironWard: return 1.28
+        case .executionersCrowd: return 1.34
+        case .suddenDeath: return 1.42
+        case .cursedTempo: return 1.3
+        }
+    }
+
+    var lootQualityBonus: Int {
+        switch self {
+        case .bloodsportContract: return 1
+        case .arcaneDrought: return 2
+        case .ironWard: return 2
+        case .executionersCrowd: return 3
+        case .suddenDeath: return 4
+        case .cursedTempo: return 2
+        }
+    }
+
+    var roundHonorBonus: Int {
+        switch self {
+        case .bloodsportContract: return 0
+        case .arcaneDrought: return 1
+        case .ironWard: return 1
+        case .executionersCrowd: return 1
+        case .suddenDeath: return 2
+        case .cursedTempo: return 1
+        }
+    }
+
+    var clearHonorBonus: Int {
+        switch self {
+        case .bloodsportContract: return 1
+        case .arcaneDrought: return 1
+        case .ironWard: return 1
+        case .executionersCrowd: return 2
+        case .suddenDeath: return 2
+        case .cursedTempo: return 2
+        }
+    }
+
+    var ratingWinBonus: Int {
+        switch self {
+        case .bloodsportContract: return 1
+        case .arcaneDrought: return 1
+        case .ironWard: return 2
+        case .executionersCrowd: return 3
+        case .suddenDeath: return 4
+        case .cursedTempo: return 2
+        }
+    }
+
+    var ratingLossPenalty: Int {
+        switch self {
+        case .bloodsportContract: return -1
+        case .arcaneDrought: return -1
+        case .ironWard: return -2
+        case .executionersCrowd: return -2
+        case .suddenDeath: return -4
+        case .cursedTempo: return -2
+        }
+    }
 }
 
 extension GameState {
@@ -127,6 +305,7 @@ extension GameState {
             monsterLevel += BalanceTuning.arenaMonsterLevelBonus
                 + (max(0, completedArenaRound - 1) * BalanceTuning.arenaMonsterLevelBonusPerRound)
                 + ratingLevelBonus
+                + arenaModifierMonsterLevelBonus()
         }
 
         var gainedXP = BalanceTuning.baseXPPerBattle + monsterLevel * BalanceTuning.xpPerMonsterLevel
@@ -134,12 +313,18 @@ extension GameState {
         if wasArenaBattle {
             gainedXP += BalanceTuning.arenaXPBonusBase + completedArenaRound * BalanceTuning.arenaXPBonusPerRound
             gainedGold += BalanceTuning.arenaGoldBonusBase + completedArenaRound * BalanceTuning.arenaGoldBonusPerRound
+            let rewardMultiplier = arenaModifierRewardMultiplier()
+            gainedXP = Int((Double(gainedXP) * rewardMultiplier).rounded())
+            gainedGold = Int((Double(gainedGold) * rewardMultiplier).rounded())
         }
         experience += gainedXP
         gold += gainedGold
 
         let incomingDamageLevel = wasArenaBattle
-            ? monsterLevel + BalanceTuning.arenaIncomingDamageLevelBonus + max(0, completedArenaRound - 1)
+            ? monsterLevel
+                + BalanceTuning.arenaIncomingDamageLevelBonus
+                + max(0, completedArenaRound - 1)
+                + arenaModifierIncomingDamageLevelBonus()
             : monsterLevel
         let incomingDamage = computeIncomingDamage(
             monsterLevel: incomingDamageLevel,
@@ -150,6 +335,7 @@ extension GameState {
         var lootBias = MonsterNames.lootQualityBias(for: defeatedMonsterType, isActBossBattle: wasActBossBattle)
         if wasArenaBattle {
             lootBias += BalanceTuning.arenaLootQualityBonus + completedArenaRound
+            lootBias += arenaModifierLootQualityBonus()
         }
         let loot = generateLoot(for: monsterLevel, qualityBias: lootBias)
         autoEquipOrStore(loot)
@@ -205,6 +391,10 @@ extension GameState {
         arenaRound = 1
         arenaRoundsTotal = arenaRoundsForCurrentState()
         battlesUntilNextArena = BalanceTuning.arenaBattleInterval
+        let rules = arenaModifiersDisplay
+        if rules != "-" {
+            logLine = "Arena rules: \(rules)."
+        }
         prepareNextEncounterMonster()
     }
 
@@ -217,15 +407,120 @@ extension GameState {
         return min(BalanceTuning.arenaRoundCap, max(1, total))
     }
 
+    var arenaModifiersDisplay: String {
+        let modifiers = arenaModifiersForCurrentRun()
+        guard !modifiers.isEmpty else { return "-" }
+        return modifiers.map(\.shortName).joined(separator: " + ")
+    }
+
+    func arenaModifiersForCurrentRun() -> [ArenaModifier] {
+        guard isArenaActive, arenaRoundsTotal > 0 else { return [] }
+        let all = ArenaModifier.allCases
+        guard !all.isEmpty else { return [] }
+
+        let seed = arenaRunSeed()
+        let primaryIndex = Int(seed % UInt64(all.count))
+        var selected: [ArenaModifier] = [all[primaryIndex]]
+
+        let canRollSecond = currentActNumber >= 2 || arenaLeague.progressionBonus >= 2 || arenaRoundsTotal >= 4
+        if canRollSecond {
+            let chance = min(
+                72,
+                18
+                    + currentActNumber * 4
+                    + arenaLeague.progressionBonus * 8
+                    + max(0, arenaRoundsTotal - 2) * 7
+            )
+            let roll = Int((seed >> 11) % 100)
+            if roll < chance, all.count > 1 {
+                let nextOffset = 1 + Int((seed >> 17) % UInt64(all.count - 1))
+                let secondaryIndex = (primaryIndex + nextOffset) % all.count
+                selected.append(all[secondaryIndex])
+            }
+        }
+
+        return selected
+    }
+
+    func arenaRunSeed() -> UInt64 {
+        let seedSource = [
+            "\(currentActNumber)",
+            "\(arenaRoundsTotal)",
+            "\(arenaWins)",
+            "\(arenaLosses)",
+            "\(arenaRating)",
+            "\(questsCompletedInCurrentAct)"
+        ].joined(separator: "|")
+        return stableSeed(from: seedSource)
+    }
+
+    func arenaModifierMonsterLevelBonus() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.monsterLevelBonus }
+    }
+
+    func arenaModifierIncomingDamageLevelBonus() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.incomingDamageLevelBonus }
+    }
+
+    func arenaModifierBattleStepMultiplier() -> Double {
+        let multiplier = arenaModifiersForCurrentRun().reduce(1.0) { $0 * $1.battleStepMultiplier }
+        return max(0.55, min(1.0, multiplier))
+    }
+
+    func arenaModifierMPRegenMultiplier() -> Double {
+        let multiplier = arenaModifiersForCurrentRun().reduce(1.0) { $0 * $1.mpRegenMultiplier }
+        return max(0.35, min(1.0, multiplier))
+    }
+
+    func arenaModifierSpellCastChanceDelta() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.spellCastChanceDelta }
+    }
+
+    func arenaModifierSpellImpactMultiplier() -> Double {
+        let multiplier = arenaModifiersForCurrentRun().reduce(1.0) { $0 * $1.spellImpactMultiplier }
+        return max(0.6, min(1.0, multiplier))
+    }
+
+    func arenaModifierRewardMultiplier() -> Double {
+        let multiplier = arenaModifiersForCurrentRun().reduce(1.0) { $0 * $1.rewardMultiplier }
+        return max(1.0, min(2.2, multiplier))
+    }
+
+    func arenaModifierLootQualityBonus() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.lootQualityBonus }
+    }
+
+    func arenaModifierRoundHonorBonus() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.roundHonorBonus }
+    }
+
+    func arenaModifierClearHonorBonus() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.clearHonorBonus }
+    }
+
+    func arenaModifierRatingWinBonus() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.ratingWinBonus }
+    }
+
+    func arenaModifierRatingLossPenalty() -> Int {
+        arenaModifiersForCurrentRun().reduce(0) { $0 + $1.ratingLossPenalty }
+    }
+
     func resolveArenaAfterVictory(monsterLevel: Int) -> String {
         guard isArenaActive else { return "" }
 
-        let roundGain = updateHonor(by: BalanceTuning.honorGainArenaRound)
+        let roundGain = updateHonor(by: BalanceTuning.honorGainArenaRound + arenaModifierRoundHonorBonus())
         if arenaRound >= arenaRoundsTotal {
-            let clearGain = updateHonor(by: BalanceTuning.honorGainArenaClear + max(0, currentActNumber / 3))
+            let clearGain = updateHonor(
+                by: BalanceTuning.honorGainArenaClear
+                    + max(0, currentActNumber / 3)
+                    + arenaModifierClearHonorBonus()
+            )
             arenaWins += 1
             let opponentRating = arenaOpponentRating(forRound: arenaRound, totalRounds: arenaRoundsTotal, monsterType: currentMonsterType)
-            let ratingDelta = updateArenaRating(by: arenaRatingDelta(didWin: true, opponentRating: opponentRating))
+            let ratingDelta = updateArenaRating(
+                by: arenaRatingDelta(didWin: true, opponentRating: opponentRating) + arenaModifierRatingWinBonus()
+            )
             let reward = applyArenaClearRewards(monsterLevel: monsterLevel)
             finishArenaRun()
             let totalHonorGain = max(0, roundGain) + max(0, clearGain)
@@ -238,8 +533,14 @@ extension GameState {
     }
 
     func applyArenaClearRewards(monsterLevel: Int) -> LootItem {
-        let minimumQuality = max(0, honorTier() + (currentActNumber / 2) + arenaLeague.progressionBonus)
-        let qualityBias = BalanceTuning.arenaLootQualityBonus + honorTier() + arenaLeague.progressionBonus
+        let minimumQuality = max(
+            0,
+            honorTier() + (currentActNumber / 2) + arenaLeague.progressionBonus + arenaModifierLootQualityBonus()
+        )
+        let qualityBias = BalanceTuning.arenaLootQualityBonus
+            + honorTier()
+            + arenaLeague.progressionBonus
+            + arenaModifierLootQualityBonus()
         let reward = generateLoot(
             for: monsterLevel + 1 + honorTier(),
             minimumQuality: minimumQuality,
@@ -258,7 +559,9 @@ extension GameState {
             totalRounds: max(1, arenaRoundsTotal),
             monsterType: arenaEncounterMonsterType()
         )
-        let ratingDelta = updateArenaRating(by: arenaRatingDelta(didWin: false, opponentRating: opponentRating))
+        let ratingDelta = updateArenaRating(
+            by: arenaRatingDelta(didWin: false, opponentRating: opponentRating) + arenaModifierRatingLossPenalty()
+        )
         finishArenaRun()
         return "Arena run failed. Honor -\(lostHonor). Rating \(ratingDelta)."
     }
@@ -689,7 +992,9 @@ extension GameState {
     }
 
     func regenerateMP() {
-        let regenPerTick = BalanceTuning.mpRegenBasePerTick + (Double(level) * BalanceTuning.mpRegenPerLevel)
+        let arcaneMultiplier = 1.0 + townProjectArcaneRegenBonusRatio()
+        let baseRegen = (BalanceTuning.mpRegenBasePerTick + (Double(level) * BalanceTuning.mpRegenPerLevel)) * arcaneMultiplier
+        let regenPerTick = isArenaActive ? baseRegen * arenaModifierMPRegenMultiplier() : baseRegen
         currentMP = min(Double(mpMax), currentMP + regenPerTick)
     }
 
@@ -728,6 +1033,9 @@ extension GameState {
         chance += Int(battleProgressValue * Double(BalanceTuning.spellCastChanceProgressBonus))
         if isBossBattle {
             chance += BalanceTuning.bossSpellCastChanceBonus
+        }
+        if isArenaActive {
+            chance += arenaModifierSpellCastChanceDelta()
         }
 
         return min(BalanceTuning.maxSpellCastChance, max(BalanceTuning.minSpellCastChance, chance))
@@ -823,7 +1131,8 @@ extension GameState {
     }
 
     func spellBattleImpact(for spell: SpellEntry) -> Double {
-        let impact = Double(spellPower(for: spell)) * BalanceTuning.spellImpactScale
+        let arenaMultiplier = isArenaActive ? arenaModifierSpellImpactMultiplier() : 1.0
+        let impact = Double(spellPower(for: spell)) * BalanceTuning.spellImpactScale * arenaMultiplier
         return min(BalanceTuning.maxSpellImpact, max(0.03, impact))
     }
 
@@ -838,7 +1147,8 @@ extension GameState {
     func bossSpellDropChancePercent() -> Int {
         let actBoost = currentActNumber * BalanceTuning.bossSpellDropActScale
         let levelBoost = max(0, level - 1) / BalanceTuning.bossSpellDropLevelDivisor
-        return min(BalanceTuning.bossSpellDropCap, BalanceTuning.bossSpellDropBase + actBoost + levelBoost)
+        let townBoost = townProjectArcaneDropChanceBonus()
+        return min(BalanceTuning.bossSpellDropCap, BalanceTuning.bossSpellDropBase + actBoost + levelBoost + townBoost)
     }
 
     func learnSpellFromScroll(named spellName: String) -> String {
@@ -891,6 +1201,7 @@ extension GameState {
             }
         }
 
+        damage -= townProjectWallsDamageMitigation()
         return max(0, damage)
     }
 
