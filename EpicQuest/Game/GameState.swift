@@ -18,6 +18,7 @@ final class GameState {
     var level = 1
     var honorLevel = 0
     var honorMilestonesEarned = 0
+    var arenaRating = 1000
     var gold = 0
     var hpMax = 10
     var currentHP = 10.0
@@ -83,6 +84,10 @@ final class GameState {
     var currentActLabel: String {
         if currentActNumber == 0 { return "Prologue" }
         return "Act \(romanNumeral(currentActNumber))"
+    }
+
+    var arenaLeague: ArenaLeague {
+        ArenaLeague.from(rating: arenaRating)
     }
 
     var spellCombatBonus: Double {
@@ -187,6 +192,7 @@ final class GameState {
         level = 1
         honorLevel = 0
         honorMilestonesEarned = 0
+        arenaRating = 1000
         gold = 0
         hpMax = 10
         currentHP = 10
@@ -292,6 +298,7 @@ final class GameState {
         level = 1
         honorLevel = 0
         honorMilestonesEarned = 0
+        arenaRating = 1000
         gold = 0
         hpMax = 10
         currentHP = 10

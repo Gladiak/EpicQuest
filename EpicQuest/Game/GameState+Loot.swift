@@ -124,11 +124,13 @@ extension GameState {
 
     func generateMerchantUpgrade(for slot: EquipmentSlot) -> LootItem {
         let honorTierBonus = merchantHonorTier()
-        let merchantLevelBonus = max(0, honorTierBonus - 1)
+        let leagueBonus = arenaLeague.progressionBonus
+        let merchantBonus = honorTierBonus + leagueBonus
+        let merchantLevelBonus = max(0, merchantBonus - 1)
         let merchantLevel = max(level + 2 + merchantLevelBonus, level + currentActNumber + merchantLevelBonus)
         let equipped = equipment[slot]
         let preferredBase = equipped.flatMap { canonicalBaseName(from: $0.name, slot: slot) }
-        let minimumQuality = (equipped?.qualityModifier ?? -10) + 1 + honorTierBonus
+        let minimumQuality = (equipped?.qualityModifier ?? -10) + 1 + merchantBonus
 
         var candidate = generateLoot(
             for: merchantLevel,
@@ -140,12 +142,12 @@ extension GameState {
 
         if let equipped {
             var rerolls = 0
-            let rerollCap = 6 + honorTierBonus
+            let rerollCap = 6 + merchantBonus
             while candidate.power <= equipped.power && rerolls < rerollCap {
                 candidate = generateLoot(
                     for: merchantLevel + 1 + rerolls,
                     forcedSlot: slot,
-                    minimumQuality: equipped.qualityModifier + 1 + honorTierBonus,
+                    minimumQuality: equipped.qualityModifier + 1 + merchantBonus,
                     preferredBaseName: preferredBase,
                     allowFlavorModifier: false
                 )
@@ -153,8 +155,8 @@ extension GameState {
             }
 
             if candidate.power <= equipped.power {
-                let boostedPower = equipped.power + Int.random(in: 1...(2 + honorTierBonus))
-                let boostedQuality = max(candidate.qualityModifier, equipped.qualityModifier + 1 + honorTierBonus)
+                let boostedPower = equipped.power + Int.random(in: 1...(2 + merchantBonus))
+                let boostedQuality = max(candidate.qualityModifier, equipped.qualityModifier + 1 + merchantBonus)
                 let boostedName = composeItemName(
                     base: preferredBase ?? baseName(for: slot),
                     quality: boostedQuality,

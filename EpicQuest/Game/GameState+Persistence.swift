@@ -14,6 +14,7 @@ extension GameState {
             level: level,
             honorLevel: honorLevel,
             honorMilestonesEarned: honorMilestonesEarned,
+            arenaRating: arenaRating,
             gold: gold,
             hpMax: hpMax,
             currentHP: currentHP,
@@ -64,6 +65,7 @@ extension GameState {
         level = snapshot.level
         honorLevel = max(0, snapshot.honorLevel)
         honorMilestonesEarned = max(0, snapshot.honorMilestonesEarned)
+        arenaRating = max(600, snapshot.arenaRating)
         gold = snapshot.gold
         hpMax = snapshot.hpMax
         currentHP = min(Double(snapshot.hpMax), max(1, snapshot.currentHP))

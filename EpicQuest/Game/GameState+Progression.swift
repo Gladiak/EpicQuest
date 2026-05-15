@@ -24,6 +24,12 @@ enum BalanceTuning {
     static let arenaMonsterLevelBonus = 4
     static let arenaMonsterLevelBonusPerRound = 2
     static let arenaIncomingDamageLevelBonus = 1
+    static let arenaBaseRating = 1000
+    static let arenaMinRating = 600
+    static let arenaMaxRating = 2600
+    static let arenaRatingLevelDivisor = 120
+    static let arenaRatingRoundDivisor = 420
+    static let arenaRatingKFactor = 28
     static let arenaBattleInterval = 6
     static let arenaBaseRounds = 3
     static let arenaRoundActDivisor = 3
@@ -117,8 +123,10 @@ extension GameState {
             isBossBattle: wasActBossBattle || isArenaFinalRound
         )
         if wasArenaBattle {
+            let ratingLevelBonus = max(0, (arenaRating - BalanceTuning.arenaBaseRating) / BalanceTuning.arenaRatingLevelDivisor)
             monsterLevel += BalanceTuning.arenaMonsterLevelBonus
                 + (max(0, completedArenaRound - 1) * BalanceTuning.arenaMonsterLevelBonusPerRound)
+                + ratingLevelBonus
         }
 
         var gainedXP = BalanceTuning.baseXPPerBattle + monsterLevel * BalanceTuning.xpPerMonsterLevel
@@ -203,7 +211,9 @@ extension GameState {
     func arenaRoundsForCurrentState() -> Int {
         let actBonus = max(0, currentActNumber - 1) / BalanceTuning.arenaRoundActDivisor
         let honorBonus = max(0, honorTier() / 2)
-        let total = BalanceTuning.arenaBaseRounds + actBonus + honorBonus
+        let leagueBonus = arenaLeague.progressionBonus / 3
+        let ratingBonus = max(0, arenaRating - BalanceTuning.arenaBaseRating) / BalanceTuning.arenaRatingRoundDivisor
+        let total = BalanceTuning.arenaBaseRounds + actBonus + honorBonus + leagueBonus + ratingBonus
         return min(BalanceTuning.arenaRoundCap, max(1, total))
     }
 
@@ -214,10 +224,12 @@ extension GameState {
         if arenaRound >= arenaRoundsTotal {
             let clearGain = updateHonor(by: BalanceTuning.honorGainArenaClear + max(0, currentActNumber / 3))
             arenaWins += 1
+            let opponentRating = arenaOpponentRating(forRound: arenaRound, totalRounds: arenaRoundsTotal, monsterType: currentMonsterType)
+            let ratingDelta = updateArenaRating(by: arenaRatingDelta(didWin: true, opponentRating: opponentRating))
             let reward = applyArenaClearRewards(monsterLevel: monsterLevel)
             finishArenaRun()
             let totalHonorGain = max(0, roundGain) + max(0, clearGain)
-            return " Arena cleared. Honor +\(totalHonorGain). Reward: \(reward.name)."
+            return " Arena cleared. Honor +\(totalHonorGain). Rating +\(max(0, ratingDelta)). Reward: \(reward.name)."
         }
 
         arenaRound += 1
@@ -226,8 +238,8 @@ extension GameState {
     }
 
     func applyArenaClearRewards(monsterLevel: Int) -> LootItem {
-        let minimumQuality = max(0, honorTier() + currentActNumber / 2)
-        let qualityBias = BalanceTuning.arenaLootQualityBonus + honorTier()
+        let minimumQuality = max(0, honorTier() + (currentActNumber / 2) + arenaLeague.progressionBonus)
+        let qualityBias = BalanceTuning.arenaLootQualityBonus + honorTier() + arenaLeague.progressionBonus
         let reward = generateLoot(
             for: monsterLevel + 1 + honorTier(),
             minimumQuality: minimumQuality,
@@ -241,8 +253,14 @@ extension GameState {
         guard isArenaActive else { return "" }
         let lostHonor = abs(min(0, updateHonor(by: -BalanceTuning.honorLossArenaForfeit)))
         arenaLosses += 1
+        let opponentRating = arenaOpponentRating(
+            forRound: max(1, arenaRound),
+            totalRounds: max(1, arenaRoundsTotal),
+            monsterType: arenaEncounterMonsterType()
+        )
+        let ratingDelta = updateArenaRating(by: arenaRatingDelta(didWin: false, opponentRating: opponentRating))
         finishArenaRun()
-        return "Arena run failed. Honor -\(lostHonor)."
+        return "Arena run failed. Honor -\(lostHonor). Rating \(ratingDelta)."
     }
 
     func finishArenaRun() {
@@ -266,6 +284,51 @@ extension GameState {
 
     func merchantHonorTier() -> Int {
         honorTier()
+    }
+
+    func arenaOpponentRating(forRound round: Int, totalRounds: Int, monsterType: MonsterType) -> Int {
+        let tierBonus: Int
+        switch monsterType {
+        case .weak:
+            tierBonus = -40
+        case .common:
+            tierBonus = 0
+        case .elite:
+            tierBonus = 30
+        case .apex:
+            tierBonus = 70
+        }
+
+        let rating = BalanceTuning.arenaBaseRating
+            + currentActNumber * 35
+            + max(0, level - 1) * 3
+            + max(1, round) * 24
+            + max(1, totalRounds) * 18
+            + arenaLeague.progressionBonus * 8
+            + tierBonus
+        return max(BalanceTuning.arenaMinRating, rating)
+    }
+
+    func arenaRatingDelta(didWin: Bool, opponentRating: Int) -> Int {
+        let expected = 1.0 / (1.0 + pow(10.0, Double(opponentRating - arenaRating) / 400.0))
+        let outcome = didWin ? 1.0 : 0.0
+        var delta = Int((Double(BalanceTuning.arenaRatingKFactor) * (outcome - expected)).rounded())
+
+        if didWin {
+            delta = max(8, delta)
+        } else {
+            delta = min(-6, delta)
+        }
+
+        return delta
+    }
+
+    @discardableResult
+    func updateArenaRating(by delta: Int) -> Int {
+        guard delta != 0 else { return 0 }
+        let previous = arenaRating
+        arenaRating = min(BalanceTuning.arenaMaxRating, max(BalanceTuning.arenaMinRating, arenaRating + delta))
+        return arenaRating - previous
     }
 
     @discardableResult

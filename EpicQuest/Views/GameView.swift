@@ -84,7 +84,7 @@ struct GameView: View {
                                 InfoRow(label: "Race", value: game.character.race)
                                 InfoRow(label: "Class", value: game.character.characterClass)
                                 InfoRow(label: "Level", value: "\(game.level)")
-                                InfoRow(label: "Honor", value: "\(game.honorLevel)  [W: \(game.arenaWins) L: \(game.arenaLosses)]")
+                                InfoRow(label: "Honor", value: "\(game.honorLevel)  W: \(game.arenaWins) L: \(game.arenaLosses)")
                                 InfoRow(label: "Gold", value: "\(game.gold)")
 
                                 Divider().overlay(Color.white.opacity(0.1))
@@ -180,6 +180,12 @@ struct GameView: View {
     private var middleColumn: some View {
         GeometryReader { proxy in
             let heights = rowHeights(for: proxy.size.height)
+            let topAvailable = heights.top
+            let minArenaHeight: CGFloat = 74
+            let desiredArenaHeight: CGFloat = 108
+            let maxEquipmentHeight = max(0, topAvailable - GameLayout.panelSpacing - minArenaHeight)
+            let equipmentHeight = max(0, min(maxEquipmentHeight, topAvailable - GameLayout.panelSpacing - desiredArenaHeight))
+            let arenaHeight = max(0, topAvailable - equipmentHeight - GameLayout.panelSpacing)
 
             VStack(spacing: GameLayout.panelSpacing) {
                 SectionPanel(title: "Equipment", systemImage: "shield.fill", iconTint: LiquidGlassPalette.accentOrange) {
@@ -202,7 +208,50 @@ struct GameView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: heights.top)
+                .frame(height: equipmentHeight)
+
+                SectionPanel(title: "Arena", systemImage: "trophy.fill", iconTint: LiquidGlassPalette.accentRed) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        InfoRow(label: "Rating", value: "\(game.arenaRating)")
+                        InfoRow(label: "League", value: game.arenaLeague.rawValue)
+                        let roundValue = game.isArenaActive
+                            ? "\(game.romanNumeral(max(1, game.arenaRound)))/\(game.romanNumeral(max(1, game.arenaRoundsTotal)))"
+                            : "-"
+                        HStack(spacing: 4) {
+                            Text("Record")
+                                .foregroundStyle(LiquidGlassPalette.secondaryText)
+                                .frame(width: 70, alignment: .leading)
+
+                            HStack(spacing: 10) {
+                                Text("W: \(game.arenaWins) L: \(game.arenaLosses)")
+                                    .foregroundStyle(LiquidGlassPalette.primaryText)
+                                    .lineLimit(1)
+                                    .layoutPriority(1)
+                                    .minimumScaleFactor(0.92)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                HStack(spacing: 4) {
+                                    Text("Round")
+                                        .foregroundStyle(LiquidGlassPalette.secondaryText)
+                                        .lineLimit(1)
+                                        .fixedSize(horizontal: true, vertical: false)
+                                    Text(roundValue)
+                                        .font(.callout.monospaced())
+                                        .foregroundStyle(LiquidGlassPalette.primaryText)
+                                        .lineLimit(1)
+                                        .frame(width: 54, alignment: .leading)
+                                }
+                                .frame(width: 102, alignment: .leading)
+                                .fixedSize(horizontal: true, vertical: false)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.callout)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: arenaHeight)
 
                 SectionPanel(title: "Inventory", systemImage: "archivebox.fill", iconTint: LiquidGlassPalette.accentGreen) {
                     VStack(alignment: .leading, spacing: 5) {

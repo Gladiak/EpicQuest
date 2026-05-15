@@ -48,6 +48,44 @@ enum MonsterType: String, Codable, CaseIterable {
     case apex
 }
 
+enum ArenaLeague: String, Codable, CaseIterable {
+    case bronze = "Bronze"
+    case silver = "Silver"
+    case gold = "Gold"
+    case platinum = "Platinum"
+    case legend = "Legend"
+
+    static func from(rating: Int) -> ArenaLeague {
+        switch rating {
+        case ..<1100:
+            return .bronze
+        case ..<1300:
+            return .silver
+        case ..<1500:
+            return .gold
+        case ..<1700:
+            return .platinum
+        default:
+            return .legend
+        }
+    }
+
+    var progressionBonus: Int {
+        switch self {
+        case .bronze:
+            return 0
+        case .silver:
+            return 1
+        case .gold:
+            return 2
+        case .platinum:
+            return 3
+        case .legend:
+            return 4
+        }
+    }
+}
+
 enum EquipmentSlot: String, CaseIterable, Codable {
     case weapon = "Weapon"
     case shield = "Shield"
@@ -140,6 +178,7 @@ struct GameSnapshot: Codable {
     let level: Int
     let honorLevel: Int
     let honorMilestonesEarned: Int
+    let arenaRating: Int
     let gold: Int
     let hpMax: Int
     let currentHP: Double
@@ -184,6 +223,7 @@ struct GameSnapshot: Codable {
 
     enum CodingKeys: String, CodingKey {
         case phase, character, level, honorLevel, honorMilestonesEarned, gold, hpMax, currentHP, mpMax, currentMP
+        case arenaRating
         case experience, experienceToNextLevel
         case currentActNumber, completedActs, questsCompletedInCurrentAct, questsPerAct
         case completedQuestNames, currentQuest, battlesPerQuest, completedBattlesInQuest
@@ -201,6 +241,7 @@ struct GameSnapshot: Codable {
         level: Int,
         honorLevel: Int,
         honorMilestonesEarned: Int,
+        arenaRating: Int,
         gold: Int,
         hpMax: Int,
         currentHP: Double,
@@ -248,6 +289,7 @@ struct GameSnapshot: Codable {
         self.level = level
         self.honorLevel = honorLevel
         self.honorMilestonesEarned = honorMilestonesEarned
+        self.arenaRating = arenaRating
         self.gold = gold
         self.hpMax = hpMax
         self.currentHP = currentHP
@@ -299,6 +341,7 @@ struct GameSnapshot: Codable {
         level = try c.decode(Int.self, forKey: .level)
         honorLevel = max(0, try c.decodeIfPresent(Int.self, forKey: .honorLevel) ?? 0)
         honorMilestonesEarned = max(0, try c.decodeIfPresent(Int.self, forKey: .honorMilestonesEarned) ?? 0)
+        arenaRating = max(600, try c.decodeIfPresent(Int.self, forKey: .arenaRating) ?? 1000)
         gold = try c.decode(Int.self, forKey: .gold)
         hpMax = try c.decode(Int.self, forKey: .hpMax)
         currentHP = try c.decodeIfPresent(Double.self, forKey: .currentHP) ?? Double(hpMax)
