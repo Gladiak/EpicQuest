@@ -90,6 +90,10 @@ final class GameState {
         ArenaLeague.from(rating: arenaRating)
     }
 
+    var prestigeLevel: Int {
+        honorMilestonesEarned
+    }
+
     var spellCombatBonus: Double {
         let totalSpellLevels = knownSpells.reduce(0) { $0 + $1.level }
         let bonus = Double(totalSpellLevels) * BalanceTuning.spellStepScale

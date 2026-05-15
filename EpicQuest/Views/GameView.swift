@@ -80,14 +80,30 @@ struct GameView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 4) {
-                                InfoRow(label: "Name", value: game.character.name)
-                                InfoRow(label: "Race", value: game.character.race)
-                                InfoRow(label: "Class", value: game.character.characterClass)
-                                InfoRow(label: "Level", value: "\(game.level)")
-                                InfoRow(label: "Honor", value: "\(game.honorLevel)  W: \(game.arenaWins) L: \(game.arenaLosses)")
-                                InfoRow(label: "Gold", value: "\(game.gold)")
+                                HStack(alignment: .top, spacing: 8) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        CompactInfoRow(label: "Name", value: game.character.name)
+                                        CompactInfoRow(label: "Race", value: game.character.race)
+                                        CompactInfoRow(label: "Class", value: game.character.characterClass)
+                                        CompactInfoRow(label: "Level", value: "\(game.level)")
+                                        CompactInfoRow(label: "Honor", value: "\(game.honorLevel)")
+                                        CompactInfoRow(label: "Prestige", value: "\(game.prestigeLevel)")
+                                        CompactInfoRow(label: "Gold", value: "\(game.gold)")
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
 
+                                    CharacterAvatarBadge(
+                                        race: game.character.race,
+                                        className: game.character.characterClass
+                                    )
+                                    .frame(width: 86)
+                                }
+
+                                Color.clear
+                                    .frame(height: 6)
                                 Divider().overlay(Color.white.opacity(0.1))
+                                Color.clear
+                                    .frame(height: 4)
 
                                 StatDetailRow(label: "STR", value: game.strDisplay)
                                 StatDetailRow(label: "CON", value: game.conDisplay)
@@ -351,5 +367,50 @@ struct GameView: View {
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
         }
+    }
+}
+
+private struct CharacterAvatarBadge: View {
+    let race: String
+    let className: String
+
+    private var raceAssetName: String {
+        RacePortraitCatalog.raceAssetName(for: race)
+    }
+
+    private var classSymbol: String {
+        RacePortraitCatalog.classSymbol(for: className)
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.black.opacity(0.28))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+                }
+                .overlay {
+                    Image(raceAssetName)
+                        .resizable()
+                        .scaledToFill()
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+            Circle()
+                .fill(Color.black.opacity(0.34))
+                .frame(width: 22, height: 22)
+                .overlay {
+                    Image(systemName: classSymbol)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.white.opacity(0.95))
+                }
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
+                }
+                .padding(6)
+        }
+        .frame(height: 122)
     }
 }

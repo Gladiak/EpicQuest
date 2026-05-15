@@ -5,6 +5,7 @@ EpicQuest is an idle/comedy RPG built with SwiftUI for macOS, inspired by the cl
 ## Highlights
 
 - Character creation with race, class, and stat roll/unroll.
+- Character sheet avatar generated from race/class.
 - Automatic progression through acts, quests, and battles.
 - Automatic Arena runs every few encounters with escalating rounds and bonus rewards.
 - Multi-slot equipment loot system with quality, bonuses, and procedural naming.

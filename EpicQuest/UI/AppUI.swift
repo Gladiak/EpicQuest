@@ -1,8 +1,8 @@
 import SwiftUI
 
 enum UIConstants {
-    static let windowWidth: CGFloat = 840
-    static let windowHeight: CGFloat = 820
+    static let windowWidth: CGFloat = 950
+    static let windowHeight: CGFloat = 920
 }
 
 enum LiquidGlassPalette {
@@ -35,6 +35,55 @@ enum LiquidGlassPalette {
     static let accentGreen = Color(red: 0.59, green: 0.84, blue: 0.64)
     static let accentRed = Color(red: 0.95, green: 0.58, blue: 0.62)
     static let accentMagenta = Color(red: 0.86, green: 0.61, blue: 0.93)
+}
+
+enum RacePortraitCatalog {
+    private static let classSymbols: [String] = [
+        "sword.fill", "book.fill", "wand.and.stars", "shield.fill", "hammer.fill",
+        "sparkles", "moon.stars.fill", "bolt.fill", "flame.fill", "drop.fill",
+        "leaf.fill", "crown.fill"
+    ]
+
+    private static let fallbackAssetName = "portrait_race_half_orc"
+    private static let availableRaceAssetNames: Set<String> = Set(
+        GameData.races.map { "portrait_race_\(slug(from: $0))" }
+    )
+
+    static func raceAssetName(for race: String) -> String {
+        let name = "portrait_race_\(slug(from: race))"
+        return availableRaceAssetNames.contains(name) ? name : fallbackAssetName
+    }
+
+    static func classSymbol(for className: String) -> String {
+        let classIndex = stableHash(className) % classSymbols.count
+        return classSymbols[classIndex]
+    }
+
+    private static func stableHash(_ text: String) -> Int {
+        var hash: UInt64 = 1469598103934665603
+        for byte in text.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 1099511628211
+        }
+        return Int(hash & UInt64(Int.max))
+    }
+
+    private static func slug(from text: String) -> String {
+        var result = ""
+        var previousWasSeparator = false
+
+        for scalar in text.lowercased().unicodeScalars {
+            if CharacterSet.alphanumerics.contains(scalar) {
+                result.unicodeScalars.append(scalar)
+                previousWasSeparator = false
+            } else if !previousWasSeparator {
+                result.append("_")
+                previousWasSeparator = true
+            }
+        }
+
+        return result.trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+    }
 }
 
 extension Notification.Name {

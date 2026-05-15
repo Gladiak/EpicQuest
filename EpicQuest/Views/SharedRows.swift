@@ -184,6 +184,27 @@ struct InfoRow: View {
     }
 }
 
+struct CompactInfoRow: View {
+    let label: String
+    let value: String
+    var labelWidth: CGFloat = 52
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Text(label)
+                .foregroundStyle(LiquidGlassPalette.secondaryText)
+                .frame(width: labelWidth, alignment: .leading)
+            Text(value)
+                .foregroundStyle(LiquidGlassPalette.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.9)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer(minLength: 0)
+        }
+        .font(.callout)
+    }
+}
+
 struct ResourceBarRow: View {
     let label: String
     let progress: Double
